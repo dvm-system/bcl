@@ -135,7 +135,7 @@ namespace Utility
 	 
 	public:
 		//! Выполняет разыменование объекта.
-		inline static Object& Dereference( Reference object) { return object;}
+		inline static Object & Dereference( Reference object) { return object;}
 
 	public:	
 		//! Конструктор умолчания.
@@ -144,6 +144,8 @@ namespace Utility
 		//! Инициализация интерфейса с помощью конструктора копирования.
 		/*! Другой способ инициализации интерфейса - использование конструктора умолчания.
 			\param [in] object Объект к копии которого предоставляется доступ.
+			\attention При доступе к данным будет использована копия исходного объекта,
+			а не сам объект.
 		*/
 		inline IObject( Reference object) : m_object( object) { }
 		
@@ -178,7 +180,7 @@ namespace Utility
 
 	public:
 		//! Выполняет разыменование объекта.
-		inline static Object& Dereference( Reference object) { return *object;}
+		inline static Object & Dereference( Reference object) { return *object;}
 	
 	public:
 		//! Конструктор умолчания, создает объект типа \c Object в динамической памяти.
@@ -209,6 +211,48 @@ namespace Utility
 	private:
 		Internal m_object; //!< Используемый объект.
 	};
+
+	//! Универсальный интерфейс для доступа к методам объектов (см. \ref IObject)	
+	/*! Реализация для ссылок на объекты.		
+	*/
+	template< class Object_ > struct IObject< Object_ & >
+	{
+		typedef Object_ Object; //!< Исползуемый объект.
+		typedef Object_ & Internal; //!< Внутреннее представление объекта.
+		typedef Object_ & Reference; //!< Ссылка на объект.
+		typedef const Object_ & ReferenceC; //!< Константная на ссылка объект.
+
+	public:
+		//! Выполняет разыменование объекта.
+		inline static Object & Dereference( Reference object) { return object;}
+	
+	public:
+		//! Инициализация интерфейса с помощью конструктора копирования.
+		/*! Объект предоставляет доступ к памяти, на которую указывает параметр конструктора.
+			\warning Использование конструктора умолчания при работе с сылочными объектами не допускается.
+			\param [in, out] object Объект, указывающий на память к которой предоставляется доступ.
+		*/
+		inline IObject( Reference object) : m_object( object) { } 		
+	    
+		//! Выполняет разыменование объекта.
+		inline Object & operator*( ) { return m_object;}
+
+		//! Выполняет разыменование объекта.
+		inline const Object & operator*( ) const { return m_object;}
+
+		//! Выполняет разыменование объекта.
+		inline Object * operator->( ) { return &m_object;}
+
+		//! Выполняет разыменование объекта.
+		inline const Object * operator->( ) const { return &m_object;}
+	    
+		//! Возвращает объект.
+		inline Reference Get( ) { return m_object; }
+	    
+	private:
+		Internal m_object; //!< Используемый объект.
+	};
+
 	//@}
 
 	/*! \defgroup Value-классы
