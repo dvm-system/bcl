@@ -61,6 +61,41 @@ namespace Utility
 
 		//! –еализаци€ логического 'и': специализаци€ в случае первого ложного значени€.
 		template< class Bool_ > struct AndImp< False, Bool_ > : public False { };		
+
+		//! –еализаци€ логического 'или'  логических констант представленных классами классом \c True или \c False.
+		/*! \tparam FirstOp_ ѕервый аргумент, представленный классом \c True или \c False.
+			\tparam SecondOp_ ¬торой аргумент, представленный классом \c True или \c False.
+		*/
+		template< class FirstOp_, class SecondOp_ > struct OrImp;
+
+		//! –еализаци€ логического 'или': специализаци€ в случае двух ложных значений.
+		template< > struct OrImp< False, False > : public False { };
+
+		//! –еализаци€ логического 'или': специализаци€ в случае ложного и иситинного значений.
+		template< > struct OrImp< False, True > : public True { };
+
+		//! –еализаци€ логического 'или': специализаци€ в случае первого истинного значени€.
+		template< class Bool_ > struct OrImp< True, Bool_ > : public True { };	
+
+		//! –еализаци€ оператора ветвлени€.
+		/*! \tparam Condition_ ”словие ветвлени€.
+			\tparam TrueBranch_ »стинна€ ветвь ветвлени€.
+			\tparam FalseBranch_ Ћожна€ ветвь ветвлени€.
+			\todo ƒобавить проверку того, что \c Condition_ - логический класс.
+		*/
+		template< class Condition_, class TrueBranch_, class FalseBranch_ > struct IfImp;
+
+		//! –еализаци€ оператора ветвлени€ дл€ истинного услови€ ветвлени€.
+		template< class TrueBranch_, class FalseBranch_ > struct IfImp< True, TrueBranch_, FalseBranch_ > : public TrueBranch_
+		{
+			typedef TrueBranch_ Result; //!< ¬ыбранна€ ветвь ветвлени€.
+		};
+
+		//! –еализаци€ оператора ветвлени€ дл€ ложного услови€ ветвлени€.
+		template< class TrueBranch_, class FalseBranch_ > struct IfImp< False, TrueBranch_, FalseBranch_ > : public FalseBranch_
+		{
+			typedef FalseBranch_ Result; //!< ¬ыбранна€ ветвь ветвлени€.
+		};
 	}
 
 	//! ¬ыполн€ет отрицание.
@@ -78,6 +113,25 @@ namespace Utility
 	*/
 	template< class FirstOp_, class SecondOp_ > struct And:
 		public Detail::AndImp< typename FirstOp_::Definition, typename SecondOp_::Definition > { };
+
+	//! ¬ыполн€ет логическое 'или'.
+	/*! \tparam FirstOp_ ѕервый аргумент, класс унаследованный от одной из логических констант.
+		\tparam SecondOp_ ¬торой аргумент, класс унаследованный от одной из логических констант.
+		\todo ƒобавить проверку того, что \c FirstOp_ и \c SecondOp_ - логические классы.
+	*/
+	template< class FirstOp_, class SecondOp_ > struct Or:
+		public Detail::OrImp< typename FirstOp_::Definition, typename SecondOp_::Definition > { };
+
+    //! ¬ыполн€ет оператор ветвлени€.
+	/*! ¬ыбранна€ ветвь ветвлени€ будет определена с помощью внутреннего типа Result,
+		класс оператора ветвлени€ \c If будет унаследован от выбранной ветви ветвлени€.
+		\tparam Condition_ ”словие ветвлени€.
+		\tparam TrueBranch_ »стинна€ ветвь ветвлени€.
+		\tparam FalseBranch_ Ћожна€ ветвь ветвлени€.
+		\todo ƒобавить проверку того, что \c Condition_ - логический класс.
+	*/
+	template< class Condition_, class TrueBranch_, class FalseBranch_ > struct If:
+		public Detail::IfImp< typename Condition_::Definition, TrueBranch_, FalseBranch_ > { };
 
 	//! ¬ыполн€ет проверку совпадаени€ типов.
 	template< class What_, class Whis_ > struct IsIdentical: public False { };
