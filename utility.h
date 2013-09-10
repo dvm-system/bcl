@@ -86,13 +86,13 @@ namespace Utility
 		template< class Condition_, class TrueBranch_, class FalseBranch_ > struct IfImp;
 
 		//! Реализация оператора ветвления для истинного условия ветвления.
-		template< class TrueBranch_, class FalseBranch_ > struct IfImp< True, TrueBranch_, FalseBranch_ > : public TrueBranch_
+		template< class TrueBranch_, class FalseBranch_ > struct IfImp< True, TrueBranch_, FalseBranch_ > 
 		{
 			typedef TrueBranch_ Result; //!< Выбранная ветвь ветвления.
 		};
 
 		//! Реализация оператора ветвления для ложного условия ветвления.
-		template< class TrueBranch_, class FalseBranch_ > struct IfImp< False, TrueBranch_, FalseBranch_ > : public FalseBranch_
+		template< class TrueBranch_, class FalseBranch_ > struct IfImp< False, TrueBranch_, FalseBranch_ > 
 		{
 			typedef FalseBranch_ Result; //!< Выбранная ветвь ветвления.
 		};
