@@ -4,7 +4,7 @@
 #ifndef UTILITY_EXT_H
 #define UTILITY_EXT_H
 
-#include "utility_ext.h"
+#include "utility.h"
 
 //! \todo  убрать _WIN32
 #ifdef _WIN32
