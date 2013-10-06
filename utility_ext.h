@@ -18,6 +18,8 @@ namespace Utility
 	//! Универсальный интерфейс для доступа к методам объектов (см. \ref IObject)
 	/*! \ingroup IObject
 		Реализация для объектов при доступе к которым используется управляемый указатель \c std::tr1::shared_ptr.
+		\warning Может не компилироваться в версиях Microsoft Visual Studio до 2010. 
+		Класс shared_ptr может быть не определн.
 	*/
 	template< class Object_ > struct IObject< std::tr1::shared_ptr< Object_ > >
 	{
