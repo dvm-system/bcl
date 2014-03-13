@@ -15,7 +15,6 @@ namespace Base
 {
      //! Копирует строку в формате UNICODE
     inline void CopyUnicode( CharUnicode *to, size_t toSize, const CharUnicode *from)
-        throw ( BCLException)
     {
         if ( wcscpy_s( to, toSize, from) != 0)
             throw Base::Exception< BCL >::Error< CELL_COLL_1( ErrorList::CopyString) >( );
@@ -33,7 +32,6 @@ namespace Base
 
     //! Копирует строку в формате ANSI
     inline void CopyAnsi( CharAnsi *to, size_t toSize, const CharAnsi *from)
-        throw ( BCLException)
     {
         if ( strcpy_s( to, toSize, from) != 0)
             throw Base::Exception< BCL >::Error< CELL_COLL_1( ErrorList::CopyString) >( );
@@ -54,7 +52,6 @@ namespace Base
     inline Text ToText( int value) { return ToTextUnicode( value); }
     //! Копирует строки в формате UNICODE.
     inline void CopyString( Char *to, size_t toSize, const Char *from)
-        throw ( BCLException)
     {
         CopyUnicode( to, toSize, from); 
     }
@@ -63,7 +60,6 @@ namespace Base
     inline Text ToText( int value) { return ToTextAnsi( value); }
     //! Копирует строки в формате ANSI.
     inline void CopyString( Char *to, size_t toSize, const Char *from)
-        throw ( BCLException)
     {
         CopyAnsi( to, toSize, from); 
     }
