@@ -30,6 +30,18 @@
 #endif
 #endif
 
+namespace std
+{
+    // Объявления шаблонных классов STL.
+
+    template<class _Ty1, class _Ty2> struct pair;
+    template<class _Ty> class allocator;
+    template<class _Ty> struct less;
+    template<class _Ty, class _Alloc > class list;
+    template<class _Ty, class _Alloc > class vector;
+    template<class _Kty, class _Ty, class _Pr, class _Alloc > class map;
+}
+
 namespace Utility
 {
     template< class Type_, class Nullable_ > class Value;
