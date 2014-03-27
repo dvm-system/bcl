@@ -29,11 +29,29 @@ namespace Base
     //! Преобразует число в строку в формате UNICODE.
     inline TextUnicode ToTextUnicode( int value)
     {
-        CharUnicode buffer[ 15];
+        CharUnicode buffer[ 20];
 
-#pragma warning( suppress : 4996)
-        _itow( value, buffer, 10);
-        
+        int last = 0;
+        int index = 0;
+
+        if ( value == 0)
+            return L"0";
+
+        if ( value < 0)
+        {
+            buffer[ index++] = '-';
+            value = -value;
+        }
+
+        for ( int tmp = value; tmp > 0; tmp /= 10, last++);
+
+        if ( index + last > 19)
+            throw  Base::Exception< BCL >::Error< CELL_COLL_1( ErrorList::ConvertString) >( );
+
+        buffer[ index + last] = '\0';
+        for ( index = index + last - 1; value > 0; value /= 10, index--)
+            buffer[ index] = value % 10 + '0';
+
         return buffer;
     }
 
@@ -53,12 +71,29 @@ namespace Base
     //! Преобразует число в строку в формате ANSI.
     inline TextAnsi ToTextAnsi( int value)
     {
-        CharAnsi buffer[ 15];
+        CharAnsi buffer[ 20];
+        int last = 0;
+        int index = 0;
 
-#pragma warning( suppress : 4996)
-        _itoa( value, buffer, 10);
+        if ( value == 0)
+            return "0";
 
-        return buffer;
+        if ( value < 0)
+        {
+            buffer[ index++] = '-';
+            value = -value;
+        }
+
+        for ( int tmp = value; tmp > 0; tmp /= 10, last++);
+
+        if ( index + last > 19)
+            throw  Base::Exception< BCL >::Error< CELL_COLL_1( ErrorList::ConvertString) >( );
+
+        buffer[ index + last] = '\0';
+        for ( index = index + last - 1; value > 0; value /= 10, index--)
+            buffer[ index] = value % 10 + '0';
+
+        return buffer; 
     }
 
 #ifdef UNICODE
