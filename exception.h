@@ -74,7 +74,7 @@ private: \
         ERROR_ACCESS( ErrorId, Application) \
         \
         /*! Создает ошибку*/ \
-        _##error_##constructor_ \
+        _##error_ constructor_ \
     }; \
     \
     /*! \brief Описывает ошибку */ \
@@ -88,7 +88,7 @@ private: \
         typedef Exception_ Super; \
         \
         /*! Создает ошибку*/ \
-        _##error_##constructor_ \
+        _##error_ constructor_ \
         \
     }; \
     \
@@ -109,7 +109,7 @@ public: \
         typedef typename Super::ErrorId ErrorId; \
         \
         /*! Создает ошибку*/ \
-        error_##constructor_ \
+        error_ constructor_ \
     };
 
 //! Содержит конструкции для обработки ошибок в программе.
@@ -149,6 +149,9 @@ namespace Base
 
         //! Ошибки при копировании строк.
         ERROR_DECL( CopyString, TEXT( "can't copy string"), Utility::Null, Error)
+
+        //! Ошибки при преобразовании строк.
+        ERROR_DECL( ConvertString, TEXT( "can't convert string"), Utility::Null, Error)
     }
 
     //! Общие сведения о библиотеке базовых конструкций
@@ -170,9 +173,9 @@ namespace Base
         typedef CELL_COLL_4( Title, Acronym, Version, Author) Description;
 
         //! Перечень возможных ошибок.
-        typedef CELL_COLL_6( ErrorList::Assign, ErrorList::TypeCast, 
+        typedef CELL_COLL_7( ErrorList::Assign, ErrorList::TypeCast, 
                              ErrorList::NullDereference, ErrorList::Unclassified, 
-                             ErrorList::Unsupported, ErrorList::CopyString) Errors;
+                             ErrorList::Unsupported, ErrorList::CopyString, ErrorList::ConvertString) Errors;
 
         //! Приоритет ошибок.
         typedef Base::ErrorList::Priority ErrorPriority; 
@@ -207,15 +210,7 @@ namespace Base
     /*! \tparam Application_ Приложение, в котором произошла ошибка.
         \param [in] e Исключение, описывающее ошибку.
     */
-    template< class Application_ > inline ErrorCode OffsetOfError( const IException *e)
-    {
-        typedef std::pair< ErrorCode, bool> Result;
-
-        Result offset = Detail::OffsetOfError< Application_ >( e);
-        ASSERT( offset.second);
-
-        return offset.first;
-    }
+    template< class Application_ > inline ErrorCode OffsetOfError( const IException *e);
 
     //! Возвращает тип ошибки.
     /*! \tparam ErrorId_ Идентификатор ошибки, заданный
@@ -345,7 +340,7 @@ namespace Base
     struct Exception : public IException
     {
         typedef Exception< Application_ > This; //!< Данное исключение.
-        typedef ErrorCode ErrorCode; //!< Код возникшей ошибки.
+        typedef Base::ErrorCode ErrorCode; //!< Код возникшей ошибки.
         typedef Application_ Application; //!< Приложение в котором возникла ошибка.
 
         //! \name Описание ошибок.
@@ -403,10 +398,15 @@ namespace Base
 
     namespace Detail
     {
+        //! Возвращает количество ошибок в дереве с заданным корнем.
+        template< class Head_ > ErrorCode ErrorCountInHead( );
+
         //! Возвращает количество ошибок, определяемых заданным списком ошибок.
         /*! \tparam ErrorList_ Описание ошибок с помощью коллекции ячеек, 
             каждая ячейка в которой описывает ошибку с помощью макроса \c ERROR_DECL.
         */
+        template< class ErrorList_ > inline ErrorCode ErrorCountInList( );
+
         template< class ErrorList_ > inline ErrorCode ErrorCountInList( )
         {
             typedef typename ErrorList_::CellId Head;
@@ -417,11 +417,10 @@ namespace Base
 
         //! Перегрузка для случая, когда обработан весь список ошибок.
         template< > inline ErrorCode ErrorCountInList< Utility::Null >( ) 
-        { 
+        {
             return 0;
         }
 
-        //! Возвращает количество ошибок в дереве с Заданным корнем.
         template< class Head_ > ErrorCode ErrorCountInHead( )
         {
             typedef typename Head_::ValueType HeadList;
@@ -470,11 +469,11 @@ namespace Base
         struct TypeOfErrorImp
         {
             typedef typename ErrorId_::CellId::Type CurrentType;
-            typedef typename IsCellExist< Priority_, CurrentType > NewPriority;
+            typedef typename Base::IsCellExist< Priority_, CurrentType > NewPriority;
             typedef typename Utility::If< typename NewPriority::Definition,
-                                          typename TypeOfErrorImp< typename ErrorId_::CellNext, 
+                                           TypeOfErrorImp< typename ErrorId_::CellNext, 
                                                                    typename NewPriority::Cell >,
-                                          typename TypeOfErrorImp< typename ErrorId_::CellNext, 
+                                           TypeOfErrorImp< typename ErrorId_::CellNext, 
                                                                    Priority_ > >::Result::Type Type;
         };
 
@@ -492,10 +491,12 @@ namespace Base
             template< class Cell_ > void operator( )( )
             {
                 typedef typename Cell_::CellId CellId;
+                typedef typename Cell_::CellNext CellNext;
+
                 m_brief = m_brief + CellId::Brief( );
 
                 Utility::AddToObjectIf< Base::Text >( 
-                    Utility::Not< Utility::IsIdentical< Cell_::CellNext, Utility::Null > >( ), 
+                    Utility::Not< Utility::IsIdentical< CellNext, Utility::Null > >( ), 
                     m_brief, ": ");
             }
 
@@ -507,7 +508,13 @@ namespace Base
         };
 
         //! Вычисляет смещение кода ошибки для заданного приложения.
-        template< class Application_ > inline std::pair< ErrorCode, bool> OffsetOfError( const IException *e)
+        template< class Application_ > inline std::pair< ErrorCode, bool> OffsetOfError( const IException *e);
+
+        //! Вычисляет смещение кода ошибки для заданного приложения.
+        template< class ApplicationList_ > inline std::pair< ErrorCode, bool> OffsetOfErrorInList( const IException *e);
+
+        template< class Application_ > 
+        inline std::pair< ErrorCode, bool> OffsetOfError( const IException *e)
         {
             typedef std::pair< ErrorCode, bool> Result;
             const Exception< Application_ > *eApp = dynamic_cast< const Exception< Application_ > * >( e);
@@ -519,8 +526,8 @@ namespace Base
                            offset.second);
         }
 
-        //! Вычисляет смещение кода ошибки для заданного приложения.
-        template< class ApplicationList_ > std::pair< ErrorCode, bool> inline OffsetOfErrorInList( const IException *e)
+        template< class ApplicationList_ > 
+        inline std::pair< ErrorCode, bool> OffsetOfErrorInList( const IException *e)
         {
             typedef std::pair< ErrorCode, bool> Result;
 
@@ -562,6 +569,16 @@ namespace Base
     {
         return Detail::TypeOfErrorImp< ErrorId_, 
                                        typename Application_::ErrorPriority >::Type::Brief( );
+    }
+
+    template< class Application_ > inline ErrorCode OffsetOfError( const IException *e)
+    {
+        typedef std::pair< ErrorCode, bool> Result;
+
+        Result offset = Detail::OffsetOfError< Application_ >( e);
+        ASSERT( offset.second);
+
+        return offset.first;
     }
 }
 

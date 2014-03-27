@@ -420,7 +420,7 @@ namespace Utility
     {
         if ( left == undef || right == undef)
                 return false;
-        return static_cast<= const Left_ & >( left) < static_cast< const Right_ & >( right);
+        return static_cast< const Left_ & >( left) < static_cast< const Right_ & >( right);
     }
     //! Оператор сравнения двух классов-оберток.
     /*! Выполняет сравнение на больше двух классов-оберток, 

@@ -350,8 +350,8 @@ namespace Base
         {
             typedef typename Cell_::CellId CellId;
 
-            if ( cell->Value< CellId >( ))
-                delete cell->Value< CellId >( );
+            if ( cell->template Value< CellId >( ))
+                delete cell->template Value< CellId >( );
         }
 
         //! Метод-заглушка для случая, когда память динамически не выделялась.
@@ -377,7 +377,7 @@ namespace Base
         {
             typedef typename Cell_::CellId CellId;
 
-            cell->Value< CellId >( ) = NULL;
+            cell->template Value< CellId >( ) = NULL;
         }
 
         //! Метод-заглушка для случая, когда ячейка не содержит указатель.
@@ -413,7 +413,7 @@ namespace Base
         template< class Cell_ > inline void CopyTo( Cell_ *cell, Utility::True)
         {
             typedef typename Cell_::CellId CellId;
-            cell->Value< CellId >( ) = m_from->Value< CellId >( );
+            cell->template Value< CellId >( ) = m_from->template Value< CellId >( );
         }
 
         //! Выполняет копирование данных в заданную ячейку.
@@ -452,7 +452,7 @@ namespace Base
         template< class Cell_ > inline void CopyFrom( Cell_ *cell, Utility::True)
         {
             typedef typename Cell_::CellId CellId;
-            m_to->Value< CellId >( ) = cell->Value< CellId >( );
+            m_to->template Value< CellId >( ) = cell->template Value< CellId >( );
         }
 
         //! Выполняет копирование данных из заданной ячейки.
