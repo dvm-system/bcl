@@ -12,7 +12,7 @@
 #include <ostream>
 
 namespace Utility
-{   
+{
     using DataBase::Text;
     using DataBase::Char;
 
@@ -25,7 +25,7 @@ namespace Utility
     template< class Type_, class Nullable_ > class Value;
 
     //! Класс-обертка запрещающая создание указателей, недопускающих неопределенное значения.
-    /*! \tparam Type_ Тип значения.       
+    /*! \tparam Type_ Тип значения.
     */
     template< class Type_ > class Value< Type_ *, Utility::False >;
 
@@ -329,6 +329,7 @@ namespace Utility
         Weak & operator=( const Type &value) 
         {
             *(static_cast< Text * >(this)) = value;
+            m_defined = true;
             return *this;
         }
 
@@ -336,6 +337,7 @@ namespace Utility
         Weak & operator=( const Char *value)
         {
             *(static_cast< Text * >(this)) = value;
+            m_defined = true;
             return *this;
         }
 
@@ -343,31 +345,32 @@ namespace Utility
         Weak & operator=( Char value) 
         {
             *(static_cast< Text * >(this)) = value;
+            m_defined = true;
             return *this;
         }
 
          //! Оператор присваивания на осонве класса, допускающего неопределенные значения.
         Weak & operator=( const Weak &value)
-        {           
+        {
             *(static_cast< Text * >(this)) = value;
             m_defined = value != undef;
             return *this;
-        }            
+        }
 
         //! Оператор присваивания на осонве класса, допускающего неопределенные значения.
-        Weak & operator=( const Strong &value);      
+        Weak & operator=( const Strong &value);
 
         //! Оператор сравнения с неопределенным значением.
         bool operator==( Null) { return !m_defined; }
 
         //! Оператор сравнения с неопределенным значением.
-        bool operator==( Null) const { return !m_defined; }              
+        bool operator==( Null) const { return !m_defined; }
 
         //! Оператор сравнения с неопределенным значением.
-        bool operator!=( Null)  { return m_defined; }        
+        bool operator!=( Null)  { return m_defined; }
 
         //! Оператор сравнения с неопределенным значением.
-        bool operator!=( Null) const { return m_defined; }   
+        bool operator!=( Null) const { return m_defined; }
      
     private:
         bool m_defined; //!< Признак неопределенного значения.
@@ -687,7 +690,7 @@ namespace Utility
         //! Оператор присваивания на осонве класса, допускающего неопределенные значения.
         Strong & operator=( const Strong &value) 
         {           
-            *(static_cast< Text * >(this)) = value;            
+            *(static_cast< Text * >(this)) = value;
             return *this;
         }        
 
@@ -695,13 +698,13 @@ namespace Utility
         bool operator==( Null) { return false; }
 
         //! Оператор сравнения с неопределенным значением.
-        bool operator==( Null) const { return false; }              
+        bool operator==( Null) const { return false; }
 
         //! Оператор сравнения с неопределенным значением.
-        bool operator!=( Null)  { return true; }        
+        bool operator!=( Null)  { return true; }
 
         //! Оператор сравнения с неопределенным значением.
-        bool operator!=( Null) const { return true; }            
+        bool operator!=( Null) const { return true; }
     };     
 
     //! Конструктор копирования на осонве класса, недопускающего неопределенные значения.

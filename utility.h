@@ -569,7 +569,7 @@ namespace Utility
         static This New( ) { return Super::New( ); }
 
         //! Удаление объекта.
-        static void Delete( This & object)  { Super::Delete( object); object.Reset( ); }
+        static void Delete( This & object) { Super::Delete( object); object.Reset( ); }
 
     public:
         //! Конструктор умолчания.

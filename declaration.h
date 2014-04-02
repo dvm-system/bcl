@@ -40,6 +40,7 @@ namespace std
     template<class _Ty, class _Alloc > class list;
     template<class _Ty, class _Alloc > class vector;
     template<class _Kty, class _Ty, class _Pr, class _Alloc > class map;
+    template<class _Kty, class _Pr, class _Alloc > class set;
 }
 
 namespace Utility
