@@ -1,5 +1,5 @@
 ﻿/*! \file
-	\brief Содержит вспомогательные сущности.
+    \brief Содержит вспомогательные сущности.
 */
 #ifndef UTILITY_H
 #define UTILITY_H
@@ -246,10 +246,10 @@ namespace Utility
     //! Позволяет выделить особенности, присущие группе объектов.
     /*! \tparam Object_ Объект из некоторой группы.
         \tparam Classificator_ Классификатор, определяющий способ группировки объектов.
-        \tparam Class_ Группа, к которой относится рассматриваемый объект.	
+        \tparam Class_ Группа, к которой относится рассматриваемый объект.  
         \todo Добавить пример использования.
     */
-    template< class Object_, template< class Object_ > class Classificator_, class Class_ > struct GroupTraits;
+    template< class Object_, template< class > class Classificator_, class Class_ > struct GroupTraits;
 
     //! Базовый класс для классов явно допускающих копирование.
     /*! \note Не нужно добавлять объявления конструкторов умолчания и операторов,
@@ -309,7 +309,7 @@ namespace Utility
     namespace Detail
     {
         //! Реализация иинтерфейса доступа к методам объектов (см. \ref IObject).
-        /*!	Реализация для объектов, расположенных в статической памяти.
+        /*! Реализация для объектов, расположенных в статической памяти.
         */
         template< class Object_ > class IAccessorImp
         {

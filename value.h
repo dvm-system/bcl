@@ -384,9 +384,9 @@ namespace Utility
     inline bool operator==( const Value< Left_, Utility::True > &left, 
                             const Value< Right_, Utility::True > &right)
     {
-        return left == undef && right == undef ||
-               left != undef && right != undef &&
-               static_cast< const Left_ & >( left) == static_cast< const Right_ & >( right);
+        return (left == undef && right == undef) ||
+               (left != undef && right != undef &&
+                static_cast< const Left_ & >( left) == static_cast< const Right_ & >( right));
     }
 
     //! Оператор сравнения двух классов-оберток.
