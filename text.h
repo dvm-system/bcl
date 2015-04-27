@@ -16,12 +16,12 @@ namespace Base
      //! Копирует строку в формате UNICODE
     inline void CopyUnicode( CharUnicode *to, size_t toSize, const CharUnicode *from)
     {
-#ifdef _WIN32
-        if ( wcscpy_s( to, toSize, from) != 0)
-#else
+#ifdef __GNUC__
         if ( wcslen( from) < toSize)
             wcscpy( to, from);
         else
+#else
+        if ( wcscpy_s( to, toSize, from) != 0)
 #endif
             throw Base::Exception< BCL >::Error< CELL_COLL_1( ErrorList::CopyString) >( );
     }
@@ -58,12 +58,12 @@ namespace Base
     //! Копирует строку в формате ANSI
     inline void CopyAnsi( CharAnsi *to, size_t toSize, const CharAnsi *from)
     {
-#ifdef _WIN32
-        if ( strcpy_s( to, toSize, from) != 0)
-#else
+#ifdef __GNUC__
         if ( strlen( from) < toSize)
             strcpy( to, from);
         else
+#else
+        if ( strcpy_s( to, toSize, from) != 0)
 #endif
             throw Base::Exception< BCL >::Error< CELL_COLL_1( ErrorList::CopyString) >( );
     }

@@ -50,10 +50,10 @@ namespace Base
 		*/			
 		template< class Functor_ > static void ForeachDefinition( Functor_ &functor)
 		{
-#ifdef _WIN32
-			functor.operator( )< Cell >( );
-#else
+#ifdef __GNUC__
 			functor.template operator( )< Cell >( );
+#else
+      functor.operator( )< Cell >();
 #endif
 			ForeachDefinition< Functor_ >( functor, Utility::IsIdentical< CellNext, Utility::Null >( ));
 		} 		
