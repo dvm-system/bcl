@@ -17,6 +17,25 @@
 //! Содержит вспомогательные сущности.
 namespace Utility
 {
+/// \brief Type of an attribute identifier.
+///
+/// Each attribute has a distinct identifier which is set in
+/// the declaration of the attribute.
+typedef const char * AttributeId;
+
+/// \brief Declaration of the attribute with a specified name
+/// and type of values.
+///
+/// Use static method id() to access a distinct attribute identifier.
+#define BASE_ATTR_DEF(name_, type_) \
+  class name_ { \
+    static const char mId; \
+  public: \
+    typedef type_ Value; \
+    static Utility::AttributeId id() {return &mId;} \
+}; \
+const char name_::mId = 0;
+
     //! Константа заданного типа.
     /*! \tparam Type_ Тип значения константы.
         \tparam value_ Значение константы.
