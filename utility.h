@@ -36,6 +36,35 @@ typedef const char * AttributeId;
 }; \
 const char name_::mId = 0;
 
+namespace detail {
+/// Implementation of a user-defined binary-literal.
+template <char... Bits> struct ToBinary;
+
+/// Implementation of a user-defined binary-literal.
+template <char HighBit, char... Bits>
+struct ToBinary<HighBit, Bits...> {
+  static_assert(HighBit == '0' || HighBit == '1', "Not a binary value!");
+  static const unsigned long long Value =
+    (HighBit - '0') << (sizeof...(Bits)) | ToBinary<Bits...>::Value;
+};
+
+/// Implementation of a user-defined binary-literal.
+template <char HighBit>
+struct ToBinary<HighBit> {
+  static_assert(HighBit == '0' || HighBit == '1', "Not a binary value!");
+  static const unsigned long long Value = (HighBit - '0');
+};
+}
+
+/// \brief Implementation of a user-defined binary-literal.
+///
+/// Binary-literal is not supported yet in C++ 11 standard (only C++ 14)
+/// so this user-defined-literal can be used instead, usage: 01000_b.
+template <char... Bits>
+constexpr unsigned long long operator "" _b() {
+  return detail::ToBinary<Bits...>::Value;
+}
+
     //! Константа заданного типа.
     /*! \tparam Type_ Тип значения константы.
         \tparam value_ Значение константы.
