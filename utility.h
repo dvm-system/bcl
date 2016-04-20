@@ -29,12 +29,11 @@ typedef const char * AttributeId;
 /// Use static method id() to access a distinct attribute identifier.
 #define BASE_ATTR_DEF(name_, type_) \
   class name_ { \
-    static const char mId; \
+    static constexpr char mId = 0; \
   public: \
     typedef type_ Value; \
     static Utility::AttributeId id() {return &mId;} \
-}; \
-const char name_::mId = 0;
+};
 
 namespace detail {
 /// Implementation of a user-defined binary-literal.
@@ -150,7 +149,7 @@ constexpr unsigned long long operator "" _b() {
 
         //! Реализация проверки выполнимости орграничения.
         template< class Bool_ > struct ConstraintImp;
-        
+
         //! Перегрузка для случая, когда ограничение выполнено.
         template< > struct ConstraintImp< Utility::True > { };
 
@@ -163,13 +162,13 @@ constexpr unsigned long long operator "" _b() {
         template< class Condition_, class TrueBranch_, class FalseBranch_ > struct IfImp;
 
         //! Реализация оператора ветвления для истинного условия ветвления.
-        template< class TrueBranch_, class FalseBranch_ > struct IfImp< True, TrueBranch_, FalseBranch_ > 
+        template< class TrueBranch_, class FalseBranch_ > struct IfImp< True, TrueBranch_, FalseBranch_ >
         {
             typedef TrueBranch_ Result; //!< Выбранная ветвь ветвления.
         };
 
         //! Реализация оператора ветвления для ложного условия ветвления.
-        template< class TrueBranch_, class FalseBranch_ > struct IfImp< False, TrueBranch_, FalseBranch_ > 
+        template< class TrueBranch_, class FalseBranch_ > struct IfImp< False, TrueBranch_, FalseBranch_ >
         {
             typedef FalseBranch_ Result; //!< Выбранная ветвь ветвления.
         };
@@ -202,7 +201,7 @@ constexpr unsigned long long operator "" _b() {
     //! Проверяет, что данное условие выполнено.
     /*! \tparam Condition_ Проверяемое условие.
     */
-    template< class Condition_ > struct Constraint : 
+    template< class Condition_ > struct Constraint :
         public Detail::ConstraintImp< typename Condition_::Definition > { };
 
     //! Выполняет оператор ветвления.
@@ -276,13 +275,13 @@ constexpr unsigned long long operator "" _b() {
 
     //! Определяет указатель на заданный объект.
     template< class What_ > struct Pointer { typedef What_ * Declaration; };
-    
+
     //! Обрабатывает случай, когда к заданному объекту не нужно добавлять другой объект.
     /*! \tparam Type_ Тип обрабатываемых обектов.
         \pre Для объектов типа Type_ должна быть определена операция '+='.
     */
     template< class Type_ > inline void AddToObjectIf( Utility::False, Type_ &, const Type_ &) { }
-    
+
     //! Добавляет объект в заданному объекту.
     /*! \tparam Type_ Тип обрабатываемых обектов.
         \param [in,out] object Объект, к которому добавляется объект \c what.
@@ -294,7 +293,7 @@ constexpr unsigned long long operator "" _b() {
     //! Позволяет выделить особенности, присущие группе объектов.
     /*! \tparam Object_ Объект из некоторой группы.
         \tparam Classificator_ Классификатор, определяющий способ группировки объектов.
-        \tparam Class_ Группа, к которой относится рассматриваемый объект.  
+        \tparam Class_ Группа, к которой относится рассматриваемый объект.
         \todo Добавить пример использования.
     */
     template< class Object_, template< class > class Classificator_, class Class_ > struct GroupTraits;
@@ -340,12 +339,12 @@ constexpr unsigned long long operator "" _b() {
 
     /*! \defgroup IObject Классы-обертки для объектов.
         \brief Классы-синонимы предоставляют единцый интерфейс для доступа к методам объектов.
-        
+
         Не зависимо от того, расположен ли данный объект в динамической памяти или
         статической памяти, используются ли управляемый указатели, классы-обертки позволяют
         обращаться к методам объекта следующим образом: <tt> obj->Method(...) </tt>.
         Класс-обертки могут быть двух видов:
-        - классы-синонимы (\c IObject) создают новый объект, 
+        - классы-синонимы (\c IObject) создают новый объект,
         способ создания объекта определяется параметром \c Object_.
         - классы-значения (\c IValue) позволяют контролировать наличие неопределенного значения для объекта
 
@@ -388,7 +387,7 @@ constexpr unsigned long long operator "" _b() {
         };
 
         //! Реализация иинтерфейса доступа к методам объектов (см. \ref IObject).
-        /*! Реализация для объектов, расположенных в динаической памяти 
+        /*! Реализация для объектов, расположенных в динаической памяти
             и используемых с помощью средств ЯП С (* или ->).
         */
         template< class Object_ > class IAccessorImp< Object_ * >
@@ -416,9 +415,9 @@ constexpr unsigned long long operator "" _b() {
             static This New( ) { return This( new Object); }
 
             //! Удаление объекта.
-            static void Delete( This & object) 
+            static void Delete( This & object)
             {
-                if ( !object.m_object) 
+                if ( !object.m_object)
                     return;
                 delete object.m_object;
                 object.m_object = NULL;
@@ -444,8 +443,8 @@ constexpr unsigned long long operator "" _b() {
 
         public:
             //! Создание нового объекта.
-            static This New( ) 
-            { 
+            static This New( )
+            {
                 Super super = Super::New( );
                 return static_cast< const This & >( super);
             }
@@ -518,7 +517,7 @@ constexpr unsigned long long operator "" _b() {
     //! Специализация класса IObject для хранения величин, в случае допустимости неопределенных значений.
     template< class Object_ > class IObject< Object_, Utility::True >
         : public Detail::IAccessor< Object_ >
-    { 
+    {
         typedef Detail::IAccessor< Object_ > Super; //!< Интерфейс доступа.
 
     public:
@@ -560,7 +559,7 @@ constexpr unsigned long long operator "" _b() {
         Pointer operator->( ) { return &*this; }
 
         //! Выполняет разыменование объекта.
-        PointerC operator->( ) const { return &*this; } 
+        PointerC operator->( ) const { return &*this; }
 
         //! Присваивает новое значение.
         This & operator= ( const This &object)
@@ -603,7 +602,7 @@ constexpr unsigned long long operator "" _b() {
     //! Специализация класса IObject для хранения указателей, в случае допустимости неопределенных значений.
     template< class Object_ > class IObject< Object_ *, Utility::True >
         : public Detail::IAccessor< Object_ * >
-    { 
+    {
         typedef Detail::IAccessor< Object_ * > Super; //!< Базовый класс.
 
     public:
