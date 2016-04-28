@@ -29,10 +29,12 @@ typedef const char * AttributeId;
 /// Use static method id() to access a distinct attribute identifier.
 #define BASE_ATTR_DEF(name_, type_) \
   class name_ { \
-    static constexpr char mId = 0; \
   public: \
     typedef type_ Value; \
-    static Utility::AttributeId id() {return &mId;} \
+    static Utility::AttributeId id() { \
+      static const char mId = 0; \
+      return &mId; \
+    } \
 };
 
 namespace detail {
