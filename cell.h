@@ -4,8 +4,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file defines static collection of cells with different types of stored
-// data. Each cell has unique key, so this collection can be treated as a map.
+// This file defines static collections of cells with different types of stored
+// data. Each cell has unique key, so these collections can be treated as maps.
 //
 //===----------------------------------------------------------------------===//
 
@@ -23,6 +23,9 @@
 #include <type_traits>
 
 namespace bcl {
+/// This is a simple representation of a static map key.
+template<class Ty> struct StaticMapKey { typedef Ty ValueType; };
+
 /// \brief This is a static map which consists of cells.
 ///
 /// This class lets to construct a static map which consists of cells. For each
@@ -31,10 +34,11 @@ namespace bcl {
 /// the next cell in the map. The last cell inherits an empty map.
 /// \attention Key of a cell is a structure within the ValueType type must be
 /// defined. This type specifies a type of data stored in the cell.
+/// For example, see the StaticMapKey class.
 /// \tparam Args Each parameter is a key of a cell. This key is used to access
 /// an appropriate cell.
 /// \sa \ref cell_test
-template<class... Args> class StaticMap;
+template<class... Keys> class StaticMap;
 
 /// This represents empty static map.
 template<> class StaticMap<> {
@@ -77,8 +81,8 @@ public:
   ///
   /// The function will be applied to the current key. If this is not the last
   /// key in the map then the following key will be visited.
-  /// \pre The `template<class CellTy> operator()()` method must be defined in
-  /// the \c Function class.
+  /// \pre The `template<class CellTy> void operator()()` method must be defined
+  /// in the \c Function class.
   /// TODO (kaniandr@gmail.com): Override and make it possible to specify a list
   /// of functions.
   /// TODO (kaniandr@gmail.com): Remove __GNUC__.
@@ -86,9 +90,9 @@ public:
   template<class Function> static void for_each_key(Function &F) {
     check_requirements();
 #ifdef __GNUC__
-    F.template operator( )<StaticMap>( );
+    F.template operator()<StaticMap>();
 #else
-    F.operator( )<StaticMap>();
+    F.operator()<StaticMap>();
 #endif
     for_each_key<Function>(F, std::is_empty<CellNext>());
   }
@@ -129,7 +133,7 @@ public:
   ///
   /// The function will be applied to the current cell. If this is not the last
   /// cell in the map then the following cell will be visited.
-  /// \pre The `template<class CellTy> operator()(Cell *C)` method must be
+  /// \pre The `template<class CellTy> void operator()(Cell *C)` method must be
   /// defined in the \c Function class.
   /// TODO (kaniandr@gmail.com): Override and make it possible to specify a list
   /// of functions.
@@ -200,6 +204,129 @@ private:
   constexpr static void check_requirements();
 
   ValueType mValue;
+};
+
+/// \brief Static list of different types.
+///
+/// TODO (kaniandr@gmail.com): Add for_each_type() static method.
+/// This is an analog of the for_each_key() method from the StaticMap class.
+template<class... Types> struct TypeList;
+
+
+/// This provides access to a first type in the list.
+template<class Head, class... Tail> struct TypeList<Head, Tail...> {
+  typedef Head Type;
+  typedef TypeList<Tail...> Next;
+};
+
+/// This represents empty list of types.
+template<> struct TypeList<> {};
+
+namespace detail {
+/// \brief This constructs a static map from list of types.
+///
+/// This is a service method which is used to implement bcl::StaticTypeMap.
+/// This wraps each type with a bcl::StaticMapKey and defines key of each cell
+/// in constructed map.
+template<class Types, class... Keys> struct StaticMapConstructor {
+  typedef typename StaticMapConstructor<
+    typename Types::Next, StaticMapKey<typename Types::Type>, Keys...>::Map Map;
+};
+
+template<class... Keys> struct StaticMapConstructor<TypeList<>, Keys...> {
+  typedef StaticMap<Keys...> Map; 
+};
+}
+
+/// \brief This is a static map where type of each element is treated as a key.
+///
+/// This is similar to bcl::StaticMap, but it is not necessary to define each
+/// key manually. Note, that each type can be represented in this map only once.
+template<class... Types> class StaticTypeMap {
+  typedef typename detail::StaticMapConstructor<
+    TypeList<Types...> >::Map MapType;
+  
+  template<class Ty> class FunctorWrapper {
+  public:
+    FunctorWrapper(Ty &F) : mFunction(F) {}
+    
+    template<class CellTy> void operator()(CellTy *C) {
+      typedef typename CellTy::CellKey CellKey;
+      typedef typename CellTy::ValueType ValueType;
+      mFunction(C->value<CellKey>());
+    }
+    
+  private:
+    Ty &mFunction;
+  };
+  
+  template<class Ty> class KeyFunctorWrapper {
+  public:
+    KeyFunctorWrapper(Ty &F) : mFunction(F) {}
+    
+    /// TODO (kaniandr@gmail.com): Remove __GNUC__.
+    template<class CellTy> void operator()() {
+#ifdef __GNUC__
+      mFunction.template operator()<typename CellTy::ValueType>();
+#else
+      mFunction.operator()<typename CellTy::ValueType>();
+#endif
+    }
+  private:
+    Ty &mFunction;
+  };
+  
+public:
+  /// \brief Applies a specified function to each type in the map.
+  ///
+  /// \pre The `template<class Type> void operator()()` method must be defined
+  /// in the \c Function class.
+  /// TODO (kaniandr@gmail.com): Override and make it possible to specify a list
+  /// of functions.
+  template<class Function> static void for_each_key(Function &F) {
+    KeyFunctorWrapper<Function> Wrapper(F);
+    MapType::for_each_key(Wrapper);
+  }
+
+  /// Returns a value of the specified type.
+  template<class Type> Type & value() {
+    return mMap.value<StaticMapKey<Type> >();
+  }
+  
+  /// Returns a value of the specified type.
+  template<class Type> const Type & value() const {
+    return mMap.value<StaticMapKey<Type> >();
+  }
+
+  /// Returns a value of the specified type.
+  template<class Type> Type & operator[](Type) {
+     return mMap.value<StaticMapKey<Type> >();
+  }
+
+  /// Returns a value of the specified type.
+  template<class Type> const Type & operator[](Type) const {
+    return mMap.value<StaticMapKey<Type> >();
+  }
+  
+  /// \brief Applies a specified function to each cell in the map.
+  ///
+  /// \pre The `template<class Type> void operator()(Type &V)` method must be
+  /// defined in the \c Function class.
+  /// TODO (kaniandr@gmail.com): Override and make it possible to specify a list
+  /// of functions.  
+  template<class Function> void for_each(Function &F) {
+    FunctorWrapper<Function> Wrapper(F);
+    mMap.for_each(Wrapper);
+  }
+
+  /// Applies a specified function to each cell in the map.  
+  template<class Function> void for_each(Function &F) const {
+    FunctorWrapper<Function> Wrapper(F);
+    mMap.for_each(Wrapper);
+  }
+  
+private:  
+  MapType mMap;
 };
 
 /// \brief Determines whether the cell exists in the collection.
