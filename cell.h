@@ -23,9 +23,6 @@
 #include <type_traits>
 
 namespace bcl {
-/// This is a simple representation of a static map key.
-template<class Ty> struct StaticMapKey { typedef Ty ValueType; };
-
 /// \brief This is a static map which consists of cells.
 ///
 /// This class lets to construct a static map which consists of cells. For each
@@ -34,7 +31,7 @@ template<class Ty> struct StaticMapKey { typedef Ty ValueType; };
 /// the next cell in the map. The last cell inherits an empty map.
 /// \attention Key of a cell is a structure within the ValueType type must be
 /// defined. This type specifies a type of data stored in the cell.
-/// For example, see the StaticMapKey class.
+/// For example, see the bcl::StaticMapKey class.
 /// \tparam Args Each parameter is a key of a cell. This key is used to access
 /// an appropriate cell.
 /// \sa \ref cell_test
@@ -223,28 +220,47 @@ template<class Head, class... Tail> struct TypeList<Head, Tail...> {
 template<> struct TypeList<> {};
 
 namespace detail {
-/// \brief This constructs a static map from list of types.
-///
-/// This is a service method which is used to implement bcl::StaticTypeMap.
-/// This wraps each type with a bcl::StaticMapKey and defines key of each cell
-/// in constructed map.
-template<class Types, class... Keys> struct StaticMapConstructor {
-  typedef typename StaticMapConstructor<
-    typename Types::Next, StaticMapKey<typename Types::Type>, Keys...>::Map Map;
+/// This implements the bcl::StaticMapConstructor class.
+template<template<class Ty> class KeyCtor, class Types, class... Keys>
+struct StaticMapConstructorImp {
+  typedef typename StaticMapConstructorImp<KeyCtor, typename Types::Next,
+    typename KeyCtor<typename Types::Type>::CellKey, Keys...>::Type Type;
 };
 
-template<class... Keys> struct StaticMapConstructor<TypeList<>, Keys...> {
-  typedef StaticMap<Keys...> Map; 
+template<template<class Ty> class KeyCtor, class... Keys>
+struct StaticMapConstructorImp<KeyCtor, TypeList<>, Keys...> {
+  typedef StaticMap<Keys...> Type; 
 };
 }
+
+/// This is a simple representation of a static map key.
+template<class Ty> struct StaticMapKey { typedef Ty ValueType; };
+
+/// \brief This is a simple constructor of keys in the map.
+///
+/// This wraps each type with a bcl::StaticMapKey.
+template<class Ty> struct StaticMapKeyConstructor {
+  typedef StaticMapKey<Ty> CellKey;
+};
+
+/// \brief This constructs a static map from list of types.
+///
+/// This is a service method which is used, for example to implement
+/// bcl::StaticTypeMap. For each argument this constructs a key in the map. For
+/// this reason the KeyCtor template must provide CellKey type definition.
+template<template<class Ty> class KeyCtor, class... Args>
+struct StaticMapConstructor {
+  typedef typename detail::StaticMapConstructorImp<
+    KeyCtor, TypeList<Args...> >::Type Type;
+};
 
 /// \brief This is a static map where type of each element is treated as a key.
 ///
 /// This is similar to bcl::StaticMap, but it is not necessary to define each
 /// key manually. Note, that each type can be represented in this map only once.
 template<class... Types> class StaticTypeMap {
-  typedef typename detail::StaticMapConstructor<
-    TypeList<Types...> >::Map MapType;
+  typedef typename StaticMapConstructor<
+    StaticMapKeyConstructor, Types...>::Type MapType;
   
   template<class Ty> class FunctorWrapper {
   public:
