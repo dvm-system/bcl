@@ -41,17 +41,17 @@ template<class... Keys> class StaticMap;
 template<> class StaticMap<> {
 public:
   /// \brief Returns true if the map is empty, otherwise returns false.
-  /// 
+  ///
   /// It is also possible to use std::is_empty to check whether the map
-  /// is empty. 
-  static constexpr bool empty() { return true; }  
+  /// is empty.
+  static constexpr bool empty() { return true; }
 };
 
 /// \brief This adds a new cell of data to the beginning of a static map.
 template<class Head, class... Tail> class StaticMap<Head, Tail...> :
   public StaticMap<Tail...> {
 public:
-  
+
   /// Key of a cell which is used to access it.
   typedef Head CellKey;
 
@@ -68,11 +68,11 @@ public:
   typedef const ValueType & ReferenceC;
 
   /// \brief Returns true if the map is empty, otherwise returns false.
-  /// 
+  ///
   /// It is also possible to use std::is_empty to check whether the map
-  /// is empty. 
+  /// is empty.
   static constexpr bool empty() { return false; }
-  
+
   /// \brief Applies a specified function to a definition of each key in the
   /// map.
   ///
@@ -125,7 +125,7 @@ public:
     check_requirements();
     return value<What>();
   }
-  
+
   /// \brief Applies a specified function to each cell in the map.
   ///
   /// The function will be applied to the current cell. If this is not the last
@@ -141,7 +141,7 @@ public:
     for_each<Function>(F, std::is_empty<CellNext>());
   }
 
-  /// Applies a specified function to each cell in the map.  
+  /// Applies a specified function to each cell in the map.
   template<class Function> void for_each(Function &F) const {
     check_requirements();
     F(this);
@@ -229,7 +229,7 @@ struct StaticMapConstructorImp {
 
 template<template<class Ty> class KeyCtor, class... Keys>
 struct StaticMapConstructorImp<KeyCtor, TypeList<>, Keys...> {
-  typedef StaticMap<Keys...> Type; 
+  typedef StaticMap<Keys...> Type;
 };
 }
 
@@ -261,25 +261,25 @@ struct StaticMapConstructor {
 template<class... Types> class StaticTypeMap {
   typedef typename StaticMapConstructor<
     StaticMapKeyConstructor, Types...>::Type MapType;
-  
+
   template<class Ty> class FunctorWrapper {
   public:
     FunctorWrapper(Ty &F) : mFunction(F) {}
-    
+
     template<class CellTy> void operator()(CellTy *C) {
       typedef typename CellTy::CellKey CellKey;
       typedef typename CellTy::ValueType ValueType;
       mFunction(C->value<CellKey>());
     }
-    
+
   private:
     Ty &mFunction;
   };
-  
+
   template<class Ty> class KeyFunctorWrapper {
   public:
     KeyFunctorWrapper(Ty &F) : mFunction(F) {}
-    
+
     /// TODO (kaniandr@gmail.com): Remove __GNUC__.
     template<class CellTy> void operator()() {
 #ifdef __GNUC__
@@ -291,7 +291,7 @@ template<class... Types> class StaticTypeMap {
   private:
     Ty &mFunction;
   };
-  
+
 public:
   /// \brief Applies a specified function to each type in the map.
   ///
@@ -308,7 +308,7 @@ public:
   template<class Type> Type & value() {
     return mMap.value<StaticMapKey<Type> >();
   }
-  
+
   /// Returns a value of the specified type.
   template<class Type> const Type & value() const {
     return mMap.value<StaticMapKey<Type> >();
@@ -323,25 +323,25 @@ public:
   template<class Type> const Type & operator[](Type) const {
     return mMap.value<StaticMapKey<Type> >();
   }
-  
+
   /// \brief Applies a specified function to each cell in the map.
   ///
   /// \pre The `template<class Type> void operator()(Type &V)` method must be
   /// defined in the \c Function class.
   /// TODO (kaniandr@gmail.com): Override and make it possible to specify a list
-  /// of functions.  
+  /// of functions.
   template<class Function> void for_each(Function &F) {
     FunctorWrapper<Function> Wrapper(F);
     mMap.for_each(Wrapper);
   }
 
-  /// Applies a specified function to each cell in the map.  
+  /// Applies a specified function to each cell in the map.
   template<class Function> void for_each(Function &F) const {
     FunctorWrapper<Function> Wrapper(F);
     mMap.for_each(Wrapper);
   }
-  
-private:  
+
+private:
   MapType mMap;
 };
 
@@ -375,13 +375,13 @@ struct IsCellExistImp<Current, What, true> : public std::true_type {
 template<class Current, class What>
 struct IsCellExistImp<Current, What, false> :
   public IsCellExist<typename Current::CellNext, What> {};
-  
+
 /// \brief Implements construction of the reversed collection.
 ///
 /// \tparam CurrentId This cell must be inserted to the beginning of the new
 /// collection which is under construction.
 /// \tparam Tail The rest of the original collection.
-/// \tparam Reverse This is a list of already traversed keys. When all keys 
+/// \tparam Reverse This is a list of already traversed keys. When all keys
 /// are traversed a merged collection will be constructed.
 template<class CurrentId, class Tail, class... Reverse> struct ReverseCellImp {
   typedef typename ReverseCellImp<typename Tail::CellKey,
@@ -398,7 +398,7 @@ struct ReverseCellImp<CurrentId, StaticMap<>, Reverse...> {
 /// \tparam CurrentId This cell must be inserted to the beginning of the new
 /// collection which is under construction.
 /// \tparam Tail The rest of the original collection.
-/// \tparam Merged This is a list of already traversed keys. When all keys 
+/// \tparam Merged This is a list of already traversed keys. When all keys
 /// are traversed a merged collection will be constructed.
 template<class CurrentId, class Tail, class... Merged> struct MergeCellImp {
   typedef typename MergeCellImp<typename Tail::CellKey,
@@ -415,7 +415,7 @@ struct MergeCellImp<CurrentId, StaticMap<>, Merged...> {
 template<class Collection, class What> struct IsCellExist :
   public detail::IsCellExistImp<Collection, What,
     std::is_same<typename Collection::CellKey, What>::value> { };
-    
+
 /// This is a specialization in the case when the desired cell is not found yet
 /// and all cells are visited.
 template<class What> struct IsCellExist<StaticMap<>, What> :
@@ -423,7 +423,7 @@ template<class What> struct IsCellExist<StaticMap<>, What> :
     typedef StaticMap<> Cell;
 };
 
-template<class Head, class... Tail> 
+template<class Head, class... Tail>
 constexpr inline void StaticMap<Head, Tail...>::check_requirements() {
   typedef typename StaticMap<Head, Tail...>::CellKey CellKey;
   typedef typename StaticMap<Head, Tail...>::CellNext CellNext;
@@ -436,7 +436,7 @@ constexpr inline void StaticMap<Head, Tail...>::check_requirements() {
 /// This class provides definition of the Result type which is equal to a type
 /// of the reversed collection.
 /// \tparam Collection A collection that should be reversed.
-template<class Collection> struct ReverseCell {    
+template<class Collection> struct ReverseCell {
   typedef typename detail::ReverseCellImp<typename Collection::CellKey,
     typename Collection::CellNext>::Result Result;
 };
@@ -624,7 +624,7 @@ private:
 /// Each record must be possible to print.
 /// With each worker the following information will be associated:
 /// - name will be stored in a cell with key Name;
-/// - salary will be stored in a cell with key Salary. 
+/// - salary will be stored in a cell with key Salary.
 ///	The source code of the example is available from \a \b cell_test.cpp
 ///
 ///	\dontinclude cell_test.cpp

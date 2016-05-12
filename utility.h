@@ -1,22 +1,18 @@
-﻿/*! \file
-    \brief Содержит вспомогательные сущности.
-*/
+﻿//===----- utility.h ---------- Auxiliary Entities --------------*- C++ -*-===//
+//
+//                       Base Construction Library (BCL)
+//
+//===----------------------------------------------------------------------===//
+//
+// This file defines auxiliary classes and functions that could be useful in
+// distinct cases.
+//
+//===----------------------------------------------------------------------===//
+
 #ifndef UTILITY_H
 #define UTILITY_H
 
-#ifndef NULL
-#ifdef __cplusplus
-//! Нулевой указатель.
-#define NULL 0
-#else
-//! Нулевой указатель.
-#define NULL ( ( void *)0)
-#endif
-#endif
-
-//! Содержит вспомогательные сущности.
-namespace Utility
-{
+namespace bcl{
 /// \brief Type of an attribute identifier.
 ///
 /// Each attribute has a distinct identifier which is set in
@@ -31,7 +27,7 @@ typedef const char * AttributeId;
   class name_ { \
   public: \
     typedef type_ Value; \
-    static Utility::AttributeId id() { \
+    static bcl::AttributeId id() { \
       static const char mId = 0; \
       return &mId; \
     } \
@@ -61,11 +57,43 @@ struct ToBinary<HighBit> {
 ///
 /// Binary-literal is not supported yet in C++ 11 standard (only C++ 14)
 /// so this user-defined-literal can be used instead, usage: 01000_b.
+/// To use this add `using bcl::operator "" _b;`
 template <char... Bits>
 constexpr unsigned long long operator "" _b() {
   return detail::ToBinary<Bits...>::Value;
 }
 
+/// This prevents assignment of the derived classes.
+class Unassignable {
+protected:
+  constexpr Unassignable() = default;
+  ~Unassignable() = default;
+  Unassignable & operator=(const Unassignable &) = delete;
+};
+
+/// This prevents copying of the derived classes.
+class Uncopyable {
+protected:
+  constexpr Uncopyable() = default;
+  ~Uncopyable() = default;
+  Uncopyable(const Uncopyable &) = delete;
+  Uncopyable & operator=(const Uncopyable &) = delete;
+};
+}
+
+#ifndef NULL
+#ifdef __cplusplus
+//! Нулевой указатель.
+#define NULL 0
+#else
+//! Нулевой указатель.
+#define NULL ( ( void *)0)
+#endif
+#endif
+
+//! Содержит вспомогательные сущности.
+namespace Utility
+{
     //! Константа заданного типа.
     /*! \tparam Type_ Тип значения константы.
         \tparam value_ Значение константы.
@@ -308,36 +336,20 @@ constexpr unsigned long long operator "" _b() {
     */
     class Copyable { };
 
-    //! Базовый класс для классов не допускающих присваивания.
-    /*! \note Не нужно добавлять объявления конструкторов умолчания и операторов,
-        так как они генерируются автоматически.
-        Явное указание может повлиять на выполняемую компилятором оптимизацию,
-        выполнние инлайн подстановки.
-    */
-    class Unassignable
-    {
-    private:
-        //! Оператор пирсваивания.
-        Unassignable & operator=( const Unassignable &);
-    };
+    /// \brief This prevents assignment of the derived classes.
+    ///
+    /// \attetion This is deprecated, use bcl::Unassignable instead.
+    /// TODO (kaniandr@gmail.com) : Remove it when all dependent files will be
+    /// rewritten.
+    typedef bcl::Unassignable Unassignable;
 
-    //! Базовый класс для классов не допускающих копирования.
-    class Uncopyable
-    {
-    protected:
-        //! Конструктор умолчание.
-        Uncopyable( ) { }
+    /// \brief This prevents copying of the derived classes.
+    ///
+    /// \attetion This is deprecated, use bcl::Unassignable instead.
+    /// TODO (kaniandr@gmail.com) : Remove it when all dependent files will be
+    /// rewritten.
+    typedef bcl::Uncopyable Uncopyable;
 
-        //! Деструктор.
-        ~Uncopyable( ) { }
-
-    private:
-        //! Закрытый конструктор копирования.
-        Uncopyable( const Uncopyable &);
-
-        //! Оператор пирсваивания.
-        Uncopyable & operator=( const Uncopyable &);
-    };
 
     /*! \defgroup IObject Классы-обертки для объектов.
         \brief Классы-синонимы предоставляют единцый интерфейс для доступа к методам объектов.
