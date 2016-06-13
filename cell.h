@@ -19,6 +19,7 @@
 #endif//BCL_LEGACY
 
 
+#include <utility.h>
 #include <cassert>
 #include <type_traits>
 
@@ -219,6 +220,17 @@ template<class Head, class... Tail> struct TypeList<Head, Tail...> {
 /// This represents empty list of types.
 template<> struct TypeList<> {};
 
+/// \brief Determines whether the Type exists in the TypeList.
+///
+/// If Type is contained in TypeList provides the member constant value equal
+/// to true. Otherwise value is false.
+template<class Type, class TypeList> struct IsTypeExist;
+
+/// Determines whether the Type exists in the TypeList.
+template<class Type, class... Types>
+struct IsTypeExist<Type, TypeList<Types...>> :
+  public is_contained<Type, Types...> {};
+
 namespace detail {
 /// This implements the bcl::StaticMapConstructor class.
 template<template<class Ty> class KeyCtor, class Types, class... Keys>
@@ -352,7 +364,7 @@ private:
 /// Cell equal to an empty map. Otherwise this class inherits std::true_type
 /// and Cell is equal to a type of found cell.
 /// \tparam Collection A collection that should be traversed.
-/// \tparam What An ket of the desired cell.
+/// \tparam What A key of the desired cell.
 template<class Collection, class What> struct IsCellExist;
 
 namespace detail {

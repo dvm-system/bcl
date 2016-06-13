@@ -1,4 +1,4 @@
-﻿//===----- utility.h ---------- Auxiliary Entities --------------*- C++ -*-===//
+//===----- utility.h ---------- Auxiliary Entities --------------*- C++ -*-===//
 //
 //                       Base Construction Library (BCL)
 //
@@ -11,6 +11,8 @@
 
 #ifndef UTILITY_H
 #define UTILITY_H
+
+#include <type_traits>
 
 namespace bcl{
 /// \brief Type of an attribute identifier.
@@ -79,6 +81,21 @@ protected:
   Uncopyable(const Uncopyable &) = delete;
   Uncopyable & operator=(const Uncopyable &) = delete;
 };
+
+/// \brief Checks if Ty is contained in the list of types Args.
+///
+/// If Ty is contained in Args provides the member constant `value` equal to true.
+/// Otherwise `value` is false.
+template<class Ty, class... Args> struct is_contained;
+
+/// Checks if Ty is contained in the list of types Args.
+template<class Ty> struct is_contained<Ty> : public std::false_type {};
+
+/// Checks if Ty is contained in the list of types Args.
+template<class Ty, class First, class... Args>
+struct is_contained<Ty, First, Args...> :
+  public std::conditional<std::is_same<Ty, First>::value,
+    std::true_type, is_contained<Ty, Args...>>::type {};
 }
 
 #ifndef NULL
