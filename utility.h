@@ -65,6 +65,31 @@ constexpr unsigned long long operator "" _b() {
   return detail::ToBinary<Bits...>::Value;
 }
 
+/// Returns a number of less significant digits equal to zero in a value which
+/// is represented in a number system with the a given base.
+template<class T>
+inline constexpr std::size_t numberOfLessZeros(T Value, T Base) {
+  static_assert(std::is_integral<T>::value, "T must be an integral type!");
+  return Value % Base != 0 ? 0 : numberOfLessZeros(Value / Base, Base) + 1;
+}
+
+/// Returns a number of digits in a value which is represented in a number
+/// system with the a given base.
+template<class T>
+inline constexpr std::size_t numberOfDigits(T Value, T Base) {
+  static_assert(std::is_integral<T>::value, "T must be an integral type!");
+  return Value / Base == 0 ? 1 : numberOfDigits(Value / Base, Base) + 1;
+}
+
+/// Returns a unit mask (11...1) of a specified type that comprises a specified
+/// number of digits.
+template<class T>
+inline constexpr T unitMask(std::size_t Digits) {
+  static_assert(std::is_integral<T>::value, "T must be an integral type!");
+  return Digits == 0 ? static_cast<T>(0) :
+    static_cast<T>(1) << (Digits - 1) | unitMask<T>(Digits - 1);
+}
+
 /// This prevents assignment of the derived classes.
 class Unassignable {
 protected:
@@ -96,6 +121,32 @@ template<class Ty, class First, class... Args>
 struct is_contained<Ty, First, Args...> :
   public std::conditional<std::is_same<Ty, First>::value,
     std::true_type, is_contained<Ty, Args...>>::type {};
+}
+
+namespace detail {
+template<class Ty, class... Args> struct IndexOfImp;
+
+template<class Ty, class Arg>
+struct IndexOfImp<Ty, Arg> {
+  static constexpr std::size_t index_of() {
+    static_assert(std::is_same<Ty, Arg>::value,
+      "Type is not contained in a list of arguments!");
+    return 0;
+  }
+};
+
+template<class Ty, class First, class... Args>
+struct IndexOfImp<Ty, First, Args...> {
+  static constexpr std::size_t index_of() {
+    return std::is_same<Ty, First>::value ? 0 :
+      IndexOfImp<Ty, Args...>::index_of() + 1;
+  }
+};
+}
+
+/// Returns index of type Ty in the list of types Args.
+template<class Ty, class... Args> inline constexpr std::size_t index_of() {
+  return detail::IndexOfImp<Ty, Args...>::index_of();
 }
 
 #ifndef NULL
