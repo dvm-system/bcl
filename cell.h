@@ -85,7 +85,7 @@ public:
   /// of functions.
   /// TODO (kaniandr@gmail.com): Remove __GNUC__.
   /// \sa \ref map_for_each_key "Example"
-  template<class Function> static void for_each_key(Function &F) {
+  template<class Function> static void for_each_key(Function &&F) {
     check_requirements();
 #ifdef __GNUC__
     F.template operator()<StaticMap>();
@@ -136,14 +136,14 @@ public:
   /// TODO (kaniandr@gmail.com): Override and make it possible to specify a list
   /// of functions.
   /// \sa \ref cell_for_each "Example"
-  template<class Function> void for_each(Function &F) {
+  template<class Function> void for_each(Function &&F) {
     check_requirements();
     F(this);
     for_each<Function>(F, std::is_empty<CellNext>());
   }
 
   /// Applies a specified function to each cell in the map.
-  template<class Function> void for_each(Function &F) const {
+  template<class Function> void for_each(Function &&F) const {
     check_requirements();
     F(this);
     for_each<Function>(F, std::is_empty<CellNext>());
@@ -231,6 +231,48 @@ template<class Type, class... Types>
 struct IsTypeExist<Type, TypeList<Types...>> :
   public is_contained<Type, Types...> {};
 
+/// Merges two list of types bcl::TypeList.
+template<class LHS, class RHS> struct MergeTypeLists;
+
+/// Merges two list of types bcl::TypeList.
+template<class... LHS, class... RHS>
+struct MergeTypeLists<TypeList<LHS...>, TypeList<RHS...>> {
+  typedef TypeList<LHS..., RHS...> Type;
+};
+
+/// Intersects two list of types bcl::TypeList.
+template<class LHS, class RHS> struct IntersectTypeLists;
+
+/// Intersects two list of types bcl::TypeList.
+template<class First, class... Tail, class RHS>
+struct IntersectTypeLists<TypeList<First, Tail...>, RHS> {
+  typedef typename std::conditional<
+    IsTypeExist<First, RHS>::value,
+    typename MergeTypeLists<
+      TypeList<First>,
+      typename IntersectTypeLists<TypeList<Tail...>, RHS>::Type>::Type,
+    typename IntersectTypeLists<TypeList<Tail...>, RHS>::Type>::type Type;
+};
+
+/// Intersects two list of types bcl::TypeList.
+template<class... Types>
+struct IntersectTypeLists <TypeList<>, TypeList<Types...>> {
+  typedef TypeList<> Type;
+};
+
+/// Removes duplicates from a bcl::TypeList.
+template<class TList> struct RemoveDuplicate {
+  typedef typename std::conditional<
+    IsTypeExist<typename TList::Type, typename TList::Next>::value,
+    typename RemoveDuplicate<typename TList::Next>::Type,
+    typename MergeTypeLists<
+      TypeList<typename TList::Type>,
+      typename RemoveDuplicate<typename TList::Next>::Type>::Type>::type Type;
+};
+
+/// Removes duplicates from a bcl::TypeList.
+template<> struct RemoveDuplicate<TypeList<>> { typedef TypeList<> Type; };
+
 namespace detail {
 /// This implements the bcl::StaticMapConstructor class.
 template<template<class Ty> class KeyCtor, class Types, class... Keys>
@@ -311,7 +353,7 @@ public:
   /// in the \c Function class.
   /// TODO (kaniandr@gmail.com): Override and make it possible to specify a list
   /// of functions.
-  template<class Function> static void for_each_key(Function &F) {
+  template<class Function> static void for_each_key(Function &&F) {
     KeyFunctorWrapper<Function> Wrapper(F);
     MapType::for_each_key(Wrapper);
   }
@@ -342,13 +384,13 @@ public:
   /// defined in the \c Function class.
   /// TODO (kaniandr@gmail.com): Override and make it possible to specify a list
   /// of functions.
-  template<class Function> void for_each(Function &F) {
+  template<class Function> void for_each(Function &&F) {
     FunctorWrapper<Function> Wrapper(F);
     mMap.for_each(Wrapper);
   }
 
   /// Applies a specified function to each cell in the map.
-  template<class Function> void for_each(Function &F) const {
+  template<class Function> void for_each(Function &&F) const {
     FunctorWrapper<Function> Wrapper(F);
     mMap.for_each(Wrapper);
   }
