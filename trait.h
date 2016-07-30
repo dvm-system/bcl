@@ -14,6 +14,7 @@
 #ifndef TRAIT_H
 #define TRAIT_H
 
+#include <climits>
 #include <cell.h>
 #include <utility.h>
 #include <type_traits>
@@ -75,7 +76,7 @@ template<class Trait> struct Join<Trait> {
 
   template<class Ty>
   static constexpr TraitKey valueWithout() {
-    return std::is_same<Ty, Trait>::value ? ~0_b : Trait::getKey();
+    return std::is_same<Ty, Trait>::value ? ~0 : Trait::getKey();
   }
 };
 }
@@ -543,7 +544,7 @@ public:
   /// Prints bit representation of descriptor.
   template<class OutputStream>
   void print(OutputStream &OS) const {
-    OS << std::bitset<sizeof(TraitKey) * 8>(mTD).to_string();
+    OS << std::bitset<sizeof(TraitKey) * CHAR_BIT>(mTD).to_string();
   }
 
   /// Prints bit representation of a unique key.
@@ -551,7 +552,7 @@ public:
   void dumpKey(OutputStream &OS) const {
     static_assert(trait::is_contained<Trait, Groups...>::value,
       "Requested trait is not specified in either group!");
-    OS << std::bitset<sizeof(TraitKey) * 8>(getKey<Trait>()).to_string();
+    OS << std::bitset<sizeof(TraitKey) * CHAR_BIT>(getKey<Trait>()).to_string();
   }
 
   /// Prints bit representation of a mask.
@@ -559,7 +560,7 @@ public:
   void dumpMask(OutputStream &OS) const {
     static_assert(trait::is_contained<Trait, Groups...>::value,
       "Requested trait is not specified in either group!");
-    OS << std::bitset<sizeof(TraitKey) * 8>(getMask<Trait>()).to_string();
+    OS << std::bitset<sizeof(TraitKey) * CHAR_BIT>(getMask<Trait>()).to_string();
   }
 
 private:
