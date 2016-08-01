@@ -36,6 +36,34 @@ template<class... Traits> struct TraitAlternative {};
 /// simultaneously.
 template<class... Traits> struct TraitUnion {};
 
+/// \brief Constructs list of all traits belongs to specified groups.
+///
+/// Note that this does not remove duplicate traits, to remove them use
+/// bcl::RemoveDuplicate<typename TraitList<...>::Type>.
+template<class... Groups> struct TraitList { typedef bcl::TypeList<> Type; };
+
+/// Constructs list of all traits belongs to specified groups.
+template<class First, class... Groups> struct TraitList<First, Groups...> {
+  typedef typename bcl::MergeTypeLists<
+    typename TraitList<First>::Type,
+    typename TraitList<Groups...>::Type>::Type Type;
+};
+
+/// Constructs list of all traits belongs to specified groups.
+template<class... Traits> struct TraitList<TraitUnion<Traits...>> {
+  typedef typename TraitList<Traits...>::Type Type;
+};
+
+/// Constructs list of all traits belongs to specified groups.
+template<class... Traits> struct TraitList<TraitAlternative<Traits...>> {
+  typedef typename TraitList<Traits...>::Type Type;
+};
+
+/// Constructs list of all traits belongs to specified groups.
+template<class Trait> struct TraitList<Trait> {
+  typedef bcl::TypeList<Trait> Type;
+};
+
 namespace trait {
 namespace detail {
 /// Joins local (equivalent to &) local keys for specified traits.
@@ -299,99 +327,31 @@ namespace detail {
 template<class Function, class Descriptor, class First, class... Traits>
 struct ForEachIfSet {
   /// \brief Executes the function for each trait which is set.
-  ///
-  /// \return True if function has been executed at least one time.
-  static bool execAll(const Descriptor &TD, Function F) {
-    if (ForEachIfSet<Function, Descriptor, First>::exec(TD, F)) {
-      ForEachIfSet<Function, Descriptor, Traits...>::execAll(TD, F);
-      return true;
-    }
-    return ForEachIfSet<Function, Descriptor, Traits...>::execAll(TD, F);
-  }
-
-  /// \brief Executes the function for the first trait which is set.
-  ///
-  /// \return True if function has been executed at least one time.
-  static bool execFirst(const Descriptor &TD, Function F) {
-    if (ForEachIfSet<Function, Descriptor, First>::exec(TD, F))
-      return true;
-    return ForEachIfSet<Function, Descriptor, Traits...>::execFirst(TD, F);
+  static void exec(const Descriptor &TD, Function F) {
+    ForEachIfSet<Function, Descriptor, First>::exec(TD, F);
+    ForEachIfSet<Function, Descriptor, Traits...>::exec(TD, F);
   }
 };
 
 /// This performs execution of a specified function for traits which is set
 /// in a descriptor.
+template<class Function, class Descriptor, class... Traits>
+struct ForEachIfSet<Function, Descriptor, TypeList<Traits...>> :
+  public ForEachIfSet<Function, Descriptor, Traits...> {};
+
+/// This performs execution of a specified function for traits which is set
+/// in a descriptor.
 template<class Function, class Descriptor, class Trait>
 struct ForEachIfSet<Function, Descriptor, Trait> {
-  /// Returns true if a trait is set and function has been executed.
-  static bool exec(const Descriptor &TD, Function F) {
-    if (TD.is<Trait>()) {
+  /// Execute a specified function if a trait is set.
+  static void exec(const Descriptor &TD, Function F) {
+    if (!TD.is<Trait>())
+      return;
 #ifdef __GNUC__
-      F.template operator()<Trait>();
+    F.template operator()<Trait>();
 #else
-      F.operator()<Trait> ();
+    F.operator()<Trait> ();
 #endif
-      return true;
-    }
-    return false;
-  }
-
-  /// Returns true if a trait is set and function has been executed.
-  static bool execAll(const Descriptor &TD, Function F) {return exec(TD, F);}
-
-  /// Returns true if a trait is set and function has been executed.
-  static bool execFirst(const Descriptor &TD, Function F) {return exec(TD, F);}
-};
-
-/// This performs execution of a specified function for traits which is set
-/// in a descriptor (specialization by TraitUnion).
-template<class Function, class Descriptor, class... Traits>
-struct ForEachIfSet<Function, Descriptor, TraitUnion<Traits...>> {
-  /// \brief Executes the function for each trait which is set.
-  ///
-  /// \return True if function has been executed at least one time.
-  static bool exec(const Descriptor &TD, Function F) {
-    return ForEachIfSet<Function, Descriptor, Traits...>::execAll(TD, F);
-  }
-
-  /// \brief Executes the function for each trait which is set.
-  ///
-  /// \return True if function has been executed at least one time.
-  static bool execAll(const Descriptor &TD, Function F) {
-    return ForEachIfSet<Function, Descriptor, Traits...>::execAll(TD, F);
-  }
-
-  /// \brief Executes the function for each trait which is set.
-  ///
-  /// \return True if function has been executed at least one time.
-  static bool execFirst(const Descriptor &TD, Function F) {
-    return ForEachIfSet<Function, Descriptor, Traits...>::execAll(TD, F);
-  }
-};
-
-/// This performs execution of a specified function for traits which is set
-/// in a descriptor (specialization by TraitAlternative).
-template<class Function, class Descriptor, class... Traits>
-struct ForEachIfSet<Function, Descriptor, TraitAlternative<Traits...>> {
-  /// \brief Executes the function for the first trait which is set.
-  ///
-  /// \return True if function has been executed at least one time.
-  static bool exec(const Descriptor &TD, Function F) {
-    return ForEachIfSet<Function, Descriptor, Traits...>::execFirst(TD, F);
-  }
-
-  /// \brief Executes the function for the first trait which is set.
-  ///
-  /// \return True if function has been executed at least one time.
-  static bool execAll(const Descriptor &TD, Function F) {
-    return ForEachIfSet<Function, Descriptor, Traits...>::execFirst(TD, F);
-  }
-
-  /// \brief Executes the function for the first trait which is set.
-  ///
-  /// \return True if function has been executed at least one time.
-  static bool execFirst(const Descriptor &TD, Function F) {
-    return ForEachIfSet<Function, Descriptor, Traits...>::execFirst(TD, F);
   }
 };
 }
@@ -529,8 +489,10 @@ public:
   /// must be defined in the \c Function class.
   template<class Trait, class Function>
   void for_each_in_group(Function &&F) const {
-    for_each_imp<
-      trait::find_group_t<Trait, Groups...>>(std::forward<Function>(F));
+    trait::detail::ForEachIfSet<Function, TraitDescriptor,
+      typename RemoveDuplicate<
+        typename TraitList<trait::find_group_t<Trait, Groups...>>::Type>::Type>
+    ::exec(*this, F);
   }
 
   /// \brief Executes function for each trait which is set.
@@ -538,7 +500,9 @@ public:
   /// \pre The `template<class Trait> void operator()()` method
   /// must be defined in the \c Function class.
   template<class Function> void for_each(Function &&F) const {
-    for_each_imp<Groups...>(std::forward<Function>(F));
+    trait::detail::ForEachIfSet<Function, TraitDescriptor,
+      typename RemoveDuplicate<typename TraitList<Groups...>::Type>::Type>
+    ::exec(*this, F);
   }
 
   /// Prints bit representation of descriptor.
@@ -549,7 +513,7 @@ public:
 
   /// Prints bit representation of a unique key.
   template<class Trait, class OutputStream>
-  void dumpKey(OutputStream &OS) const {
+  static void printKey(OutputStream &OS) {
     static_assert(trait::is_contained<Trait, Groups...>::value,
       "Requested trait is not specified in either group!");
     OS << std::bitset<sizeof(TraitKey) * CHAR_BIT>(getKey<Trait>()).to_string();
@@ -557,29 +521,22 @@ public:
 
   /// Prints bit representation of a mask.
   template<class Trait, class OutputStream>
-  void dumpMask(OutputStream &OS) const {
+  static void printMask(OutputStream &OS) {
     static_assert(trait::is_contained<Trait, Groups...>::value,
       "Requested trait is not specified in either group!");
     OS << std::bitset<sizeof(TraitKey) * CHAR_BIT>(getMask<Trait>()).to_string();
   }
 
 private:
-  /// Executes function for each trait which is set and belongs to a specified
-  /// group.
-  template<class Group, class Function> void for_each_imp(Function &&F) const {
-    trait::detail::ForEachIfSet<
-      Function, TraitDescriptor, Group>::exec(*this, F);
-  }
-
-  /// Executes function for each trait which is set and belongs to specified
-  /// groups.
-  template<class First, class Second, class... Groups, class Function>
-  void for_each_imp(Function &&F) const {
-    for_each_imp<First>(F);
-    for_each_imp<Second, Groups...>(F);
-  }
-
   TraitKey mTD = 0;
+};
+
+/// \brief Constructs list of all traits belongs to a specified descriptor.
+///
+/// Note that this does not remove duplicate traits, to remove them use
+/// bcl::RemoveDuplicate<typename TraitList<...>::Type>.
+template<class... Groups> struct TraitList<TraitDescriptor<Groups...>> {
+  typedef typename TraitList<Groups...>::Type Type;
 };
 
 namespace trait {
@@ -742,45 +699,13 @@ public:
     return Result;
   }
 
+  /// Prints bit representation of descriptor.
+  template<class OutputStream>
+  void print(OutputStream &OS) const { mTD.print(OS); }
+
 private:
   TraitMap mValues;
   TraitDescriptor mTD;
-};
-
-/// \brief Constructs list of all traits belongs to specified groups.
-///
-/// Note that this does not remove duplicate traits, to remove them use
-/// bcl::RemoveDuplicate<typename TraitList<...>::Type>.
-template<class... Groups> struct TraitList { typedef bcl::TypeList<> Type; };
-
-/// \brief Constructs list of all traits belongs to a specified descriptor.
-///
-/// Note that this does not remove duplicate traits, to remove them use
-/// bcl::RemoveDuplicate<typename TraitList<...>::Type>.
-template<class... Groups> struct TraitList<TraitDescriptor<Groups...>> {
-  typedef typename TraitList<Groups...>::Type Type;
-};
-
-/// Constructs list of all traits belongs to specified groups.
-template<class First, class... Groups> struct TraitList<First, Groups...> {
-  typedef typename bcl::MergeTypeLists<
-    typename TraitList<First>::Type,
-    typename TraitList<Groups...>::Type>::Type Type;
-};
-
-/// Constructs list of all traits belongs to specified groups.
-template<class... Traits> struct TraitList<TraitUnion<Traits...>> {
-  typedef typename TraitList<Traits...>::Type Type;
-};
-
-/// Constructs list of all traits belongs to specified groups.
-template<class... Traits> struct TraitList<TraitAlternative<Traits...>> {
-  typedef typename TraitList<Traits...>::Type Type;
-};
-
-/// Constructs list of all traits belongs to specified groups.
-template<class Trait> struct TraitList<Trait> {
-  typedef bcl::TypeList<Trait> Type;
 };
 
 /// \brief This is a static map where each trait in descriptor is treated as
