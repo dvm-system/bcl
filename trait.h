@@ -898,5 +898,41 @@ public:
 private:
   MapType mMap;
 };
+
+/// \brief This functor distributes trait set to cells in a static trait map.
+///
+/// This functor stores a set of traits (TraitSet) in cells of a static map
+/// (TraitMap). This map should contain a unique cell for each trait in a trait
+/// descriptor (for example, TraitMap is bcl::StaticTraitMap<...>). If a trait
+/// is set in the set of traits it will be stored in appropriate cell. The
+/// template class Inserter must provide a static method
+/// `insert(Coll &, Element &)` where Element is equal to TraitSet * and Coll is
+/// a type of any cell in TraitMap.
+///
+/// Usage: `TraitSet Set; TraitMap Map; Set.for_each(Constructor(Set, Map))`.
+template<class TraitSet, class TraitMap,
+  template<class Coll, class Element> class Inserter = PushBackInserter>
+class TraitMapConstructor {
+public:
+  /// Creates the functor.
+  TraitMapConstructor(TraitSet &TS, TraitMap &Map) : mTS(&TS), mMap(&Map) {}
+
+  /// Stores representation of a trait in a static map.
+  template<class Trait> void operator()() {
+    Inserter<
+      typename std::remove_reference<decltype(mMap->value<Trait>())>::type,
+      TraitSet *>::insert(mMap->value<Trait>(), mTS);
+  }
+
+  /// Returns a static trait map.
+  TraitMap & getTraitMap() { return *mMap; }
+
+  /// Returns a trait set.
+  TraitSet & getTraitSet() { return *mTS; }
+
+private:
+  TraitMap *mMap;
+  TraitSet *mTS;
+};
 }
 #endif//TRAIT_H

@@ -14,7 +14,7 @@
 
 #include <type_traits>
 
-namespace bcl{
+namespace bcl {
 /// \brief Type of an attribute identifier.
 ///
 /// Each attribute has a distinct identifier which is set in
@@ -120,8 +120,7 @@ template<class Ty> struct is_contained<Ty> : public std::false_type {};
 template<class Ty, class First, class... Args>
 struct is_contained<Ty, First, Args...> :
   public std::conditional<std::is_same<Ty, First>::value,
-    std::true_type, is_contained<Ty, Args...>>::type {};
-}
+  std::true_type, is_contained<Ty, Args...>>::type{};
 
 namespace detail {
 template<class Ty, class... Args> struct IndexOfImp;
@@ -147,6 +146,13 @@ struct IndexOfImp<Ty, First, Args...> {
 /// Returns index of type Ty in the list of types Args.
 template<class Ty, class... Args> inline constexpr std::size_t index_of() {
   return detail::IndexOfImp<Ty, Args...>::index_of();
+}
+
+/// Provides method to insert an element (Element) in a collection (Coll) which
+/// supports push_back(Element &) method.
+template<class Coll, class Element> struct PushBackInserter {
+  inline static void insert(Coll &C, Element &E) { C.push_back(E); }
+};
 }
 
 #ifndef NULL
