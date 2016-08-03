@@ -215,6 +215,15 @@ template<class... Types> struct TypeList;
 template<class Head, class... Tail> struct TypeList<Head, Tail...> {
   typedef Head Type;
   typedef TypeList<Tail...> Next;
+
+  /// Returns index of type Ty in the list of types.
+  template<class Ty> static constexpr std::size_t index_of() {
+    return bcl::index_of<Ty, Head, Tail...>(); }
+
+  /// Returns number of types in the list.
+  static constexpr std::size_t size_of() {
+    return bcl::size_of<Head, Tail...>();
+  }
 };
 
 /// This represents empty list of types.

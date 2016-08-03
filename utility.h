@@ -128,8 +128,6 @@ template<class Ty, class... Args> struct IndexOfImp;
 template<class Ty, class Arg>
 struct IndexOfImp<Ty, Arg> {
   static constexpr std::size_t index_of() {
-    static_assert(std::is_same<Ty, Arg>::value,
-      "Type is not contained in a list of arguments!");
     return 0;
   }
 };
@@ -141,11 +139,31 @@ struct IndexOfImp<Ty, First, Args...> {
       IndexOfImp<Ty, Args...>::index_of() + 1;
   }
 };
+
+template<class... Args> struct SizeOfImp;
+
+template<> struct SizeOfImp<> {
+  static constexpr std::size_t size_of() { return 0; }
+};
+
+template<class First, class... Args>
+struct SizeOfImp<First, Args...> {
+  static constexpr std::size_t size_of() {
+    return SizeOfImp<Args...>::size_of() + 1;
+  }
+};
 }
 
 /// Returns index of type Ty in the list of types Args.
 template<class Ty, class... Args> inline constexpr std::size_t index_of() {
+  static_assert(bcl::is_contained<Ty, Args...>::value,
+    "Type is not contained in a list of arguments!");
   return detail::IndexOfImp<Ty, Args...>::index_of();
+}
+
+/// Returns number of types the list of types Args.
+template<class... Args> inline constexpr std::size_t size_of() {
+  return detail::SizeOfImp<Args...>::size_of();
 }
 
 /// Provides method to insert an element (Element) in a collection (Coll) which
