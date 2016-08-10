@@ -171,6 +171,15 @@ template<class... Args> inline constexpr std::size_t size_of() {
 template<class Coll, class Element> struct PushBackInserter {
   inline static void insert(Coll &C, Element &E) { C.push_back(E); }
 };
+
+/// Return true if this character is non-new-line whitespace:
+/// ' ', '\\t', '\\f', '\\v', '\\r'.
+static inline bool isWhitespace(unsigned char c) {
+  switch (c) {
+  case ' ': case '\t': case '\f': case '\v': case '\r': return true;
+  default: return false;
+  }
+}
 }
 
 #ifndef NULL
