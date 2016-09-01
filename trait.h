@@ -79,8 +79,8 @@ struct Join<Descriptor, First, Traits...> {
 
   template<class Ty>
   static constexpr TraitKey valueWithout() {
-    return Join<Descriptor, First>::valueWithout<Ty>() |
-      Join<Descriptor, Traits...>::valueWithout<Ty>();
+    return Join<Descriptor, First>::template valueWithout<Ty>() |
+      Join<Descriptor, Traits...>::template valueWithout<Ty>();
   }
 };
 
@@ -102,11 +102,11 @@ struct Join<Descriptor, TraitAlternative<Traits...>> :
 /// Joins (equivalent to |) local keys for specified traits.
 template<class Descriptor, class Trait>
 struct Join<Descriptor, Trait> {
-  static constexpr TraitKey value() { return Descriptor::getKey<Trait>(); }
+  static constexpr TraitKey value() { return Descriptor::template getKey<Trait>(); }
 
   template<class Ty>
   static constexpr TraitKey valueWithout() {
-    return std::is_same<Ty, Trait>::value ? 0 : Descriptor::getKey<Trait>();
+    return std::is_same<Ty, Trait>::value ? 0 : Descriptor::template getKey<Trait>();
   }
 };
 
@@ -128,7 +128,7 @@ template<class Descriptor, class... Traits> inline constexpr TraitKey join() {
 /// 'Trait'.
 template<class Trait, class Descriptor, class... Traits>
 inline constexpr TraitKey joinWithout() {
-  return detail::Join<Descriptor, Traits...>::valueWithout<Trait>();
+  return detail::Join<Descriptor, Traits...>::template valueWithout<Trait>();
 }
 
 /// Calculates number of bits required to represent group of traits.
@@ -139,7 +139,7 @@ template<class... Traits> inline constexpr std::size_t bitSize() {
 /// Calculates index of a specified trait in a group of traits.
 template<class Trait, class... Traits> inline constexpr std::size_t indexOf() {
   return RemoveDuplicate<
-    typename TraitList<Traits...>::Type>::Type::index_of<Trait>();
+    typename TraitList<Traits...>::Type>::Type::template index_of<Trait>();
 }
 
 /// \brief Checks if a trait is contained in a group of traits.
@@ -307,7 +307,7 @@ template<class Function, class Descriptor, class Trait>
 struct ForEachIfSet<Function, Descriptor, Trait> {
   /// Execute a specified function if a trait is set.
   static void exec(const Descriptor &TD, Function F) {
-    if (!TD.is<Trait>())
+    if (!TD.template is<Trait>())
       return;
 #ifdef __GNUC__
     F.template operator()<Trait>();
@@ -477,7 +477,7 @@ public:
   /// Unset groups which contains specified traits.
   template<class... Traits> void unset_group() {
     auto constexpr NotMasks = ~joinMask<Traits...>();
-    mTD = mTD & NotMasks
+    mTD = mTD & NotMasks;
   }
 
   /// Unset all traits.
@@ -543,9 +543,9 @@ public:
   }
 
   /// Prints bit representation of masks.
-  template<class Trait, class OutputStream>
+  template<class... Traits, class OutputStream>
   static void printMask(OutputStream &OS) {
-    auto constexpr Masks = joinMasks<Traits...>();
+    auto constexpr Masks = joinMask<Traits...>();
     OS << std::bitset<sizeof(TraitKey) * CHAR_BIT>(Masks).to_string();
   }
 
@@ -586,7 +586,7 @@ class TraitSet {
 
     template<class Trait>
     void operator()() {
-      auto constexpr Key = TraitDescriptor::getKey<Trait>();
+      auto constexpr Key = TraitDescriptor::template getKey<Trait>();
       auto I = mValues->find(Key);
       if (I != mValues->end()) {
         if (I->second)
@@ -633,7 +633,7 @@ public:
   /// conflicted traits will be unset.
   /// \note This class manages memory allocation to store description of traits.
   template<class Trait> void set(Trait *T) {
-    auto constexpr Key = mTD.getKey<Trait>();
+    auto constexpr Key = mTD.template getKey<Trait>();
     auto I = mValues.find(Key);
     if (I != mValues.end()) {
       if (I->second)
@@ -642,10 +642,10 @@ public:
       return;
     }
     if (!mValues.empty())
-      mTD.for_each_conflict<Trait>(ConflictsResolver<Trait>(&mValues));
+      mTD.template for_each_conflict<Trait>(ConflictsResolver<Trait>(&mValues));
     mTD.set<Trait>();
     mValues.insert(
-      std::make_pair(mTD.getKey<Trait>(), reinterpret_cast<void *>(T)));
+      std::make_pair(mTD.template getKey<Trait>(), reinterpret_cast<void *>(T)));
   }
 
   /// \brief Returns description of a specified trait or nullptr.
@@ -654,7 +654,7 @@ public:
   /// in a descriptor it means that appropriate description has not been
   /// initialized.
   template<class Trait> Trait * get() {
-    auto constexpr Key = mTD.getKey<Trait>();
+    auto constexpr Key = mTD.template getKey<Trait>();
     auto I = mValues.find(Key);
     return I == mValues.end() ? nullptr : reinterpret_cast<Trait *>(I->second);
   }
@@ -668,7 +668,7 @@ public:
   /// If the trait has been set it will not be unset in descriptor but
   /// description will be removed from this set.
   template<class Trait> Trait * release() {
-    auto constexpr Key = mTD.getKey<Trait>();
+    auto constexpr Key = mTD.template getKey<Trait>();
     auto I = mValues.find(Key);
     Trait *Result =
       I == mValues.end() ? nullptr : reinterpret_cast<Trait *>(I->second);
@@ -709,9 +709,9 @@ template<class Ty, class TraitDescriptor> class StaticTraitMap {
       typename TraitList<TraitDescriptor>::Type>::Type>::Type MapType;
 
   /// Helper class to implement for_each() methods.
-  template<class Ty> class FunctorWrapper {
+  template<class T> class FunctorWrapper {
   public:
-    FunctorWrapper(Ty &F) : mFunction(F) {}
+    FunctorWrapper(T &F) : mFunction(F) {}
 
     /// TODO (kaniandr@gmail.com): Remove __GNUC__.
     template<class CellTy> void operator()(CellTy *C) {
@@ -726,13 +726,13 @@ template<class Ty, class TraitDescriptor> class StaticTraitMap {
     }
 
   private:
-    Ty &mFunction;
+    T &mFunction;
   };
 
   /// Helper class to implement for_each_key() methods.
-  template<class Ty> class KeyFunctorWrapper {
+  template<class T> class KeyFunctorWrapper {
   public:
-    KeyFunctorWrapper(Ty &F) : mFunction(F) {}
+    KeyFunctorWrapper(T &F) : mFunction(F) {}
 
     /// TODO (kaniandr@gmail.com): Remove __GNUC__.
     template<class CellTy> void operator()() {
@@ -745,7 +745,7 @@ template<class Ty, class TraitDescriptor> class StaticTraitMap {
 #endif
     }
   private:
-    Ty &mFunction;
+    T &mFunction;
   };
 
 public:
@@ -822,8 +822,8 @@ public:
   /// Stores representation of a trait in a static map.
   template<class Trait> void operator()() {
     Inserter<
-      typename std::remove_reference<decltype(mMap->value<Trait>())>::type,
-      TraitSet *>::insert(mMap->value<Trait>(), mTS);
+      typename std::remove_reference<decltype(mMap->template value<Trait>())>::type,
+      TraitSet *>::insert(mMap->template value<Trait>(), mTS);
   }
 
   /// Returns a static trait map.
