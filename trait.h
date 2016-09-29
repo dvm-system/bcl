@@ -388,23 +388,6 @@ template<class... Groups>
 class TraitDescriptor {
 public:
   /// \brief Returns a unique key for a trait in a trait list.
-  ///
-  /// There are two keys for each trait:
-  /// - A local key which can be accessed via Trait::getKey() method.
-  /// - A unique key in a concrete list of traits which can be accessed by
-  /// this method.
-  ///
-  /// For a trait Man a local key is
-  /// `000000000000000000000000000000000000000000000000000000000000000001`
-  /// (64 bits) and a unique key is
-  /// `001000000000000000000000000000000000000000000000000000000000000000`.
-  /// Other unique keys are:
-  /// -`100000000000000000000000000000000000000000000000000000000000000000` for
-  /// Alien;
-  /// - `01000000000000000000000000000000000000000000000000000000000000000` for
-  /// Secret;
-  /// - `00010000000000000000000000000000000000000000000000000000000000000` for
-  /// Woman.
   template<class Trait> static constexpr TraitKey getKey() {
     static_assert(trait::is_contained<Trait, Groups...>::value,
       "Requested trait is not specified in either group!");
@@ -483,12 +466,6 @@ public:
   /// Unset all traits.
   void unset_all() { mTD = 0; }
 
-  /// Add traits (equivalent to &).
-  template<class First, class Second, class... Traits> void add() {
-    add<First>();
-    add<Second, Traits...>();
-  }
-
   /// Checks whether all specified traits are set.
   template<class... Traits> bool is() const {
     auto constexpr Keys = joinKey<Traits...>();
@@ -527,6 +504,15 @@ public:
     trait::detail::ForEachIfSet<Function, TraitDescriptor,
       typename RemoveDuplicate<typename TraitList<Groups...>::Type>::Type>
     ::exec(*this, F);
+  }
+
+  /// \brief Executes function for each available trait.
+  ///
+  /// \pre The `template<class Trait> void operator()()` method
+  /// must be defined in the \c Function class.
+  template<class Function> static void for_each_available(Function &&F) {
+    RemoveDuplicate<typename TraitList<Groups...>::Type>::Type
+      ::for_each_type(std::forward<Function>(F));
   }
 
   /// Prints bit representation of descriptor.
@@ -625,6 +611,24 @@ public:
   /// must be defined in the \c Function class.
   template<class Function> void for_each(Function &&F) const {
     mTD.for_each(std::forward<Function>(F));
+  }
+
+  /// \brief Executes function for each trait which is set and conflicts with
+  /// a specified trait.
+  ///
+  /// \pre The `template<class Trait> void operator()()` method
+  /// must be defined in the \c Function class.
+  template<class Trait, class Function>
+  void for_each_conflict(Function &&F) const {
+    mTD.for_each_conflict<Trait>(std::forward<Function>(F));
+  }
+
+  /// \brief Executes function for each available trait.
+  ///
+  /// \pre The `template<class Trait> void operator()()` method
+  /// must be defined in the \c Function class.
+  template<class Function> static void for_each_available(Function &&F) {
+    TraitDescriptor::for_each_available(std::forward<Function>(F));
   }
 
   /// \brief Add description of a specified trait.

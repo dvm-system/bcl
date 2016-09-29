@@ -92,7 +92,7 @@ public:
 #else
     F.operator()<StaticMap>();
 #endif
-    for_each_key<Function>(F, std::is_empty<CellNext>());
+    for_each_key(F, std::is_empty<CellNext>());
   }
 
   /// \brief Returns a value from the specified cell.
@@ -139,14 +139,14 @@ public:
   template<class Function> void for_each(Function &&F) {
     check_requirements();
     F(this);
-    for_each<Function>(F, std::is_empty<CellNext>());
+    for_each(F, std::is_empty<CellNext>());
   }
 
   /// Applies a specified function to each cell in the map.
   template<class Function> void for_each(Function &&F) const {
     check_requirements();
     F(this);
-    for_each<Function>(F, std::is_empty<CellNext>());
+    for_each(F, std::is_empty<CellNext>());
   }
 
 protected:
@@ -174,7 +174,7 @@ private:
 
   /// This is invoked to visit the next cell in the map.
   template<class Function> void for_each(Function &F, std::false_type) {
-    CellNext::template for_each<Function>(F);
+    CellNext::for_each(F);
   }
 
   /// This is invoked when all cells will be visited.
@@ -182,7 +182,7 @@ private:
 
   /// This is invoked to visit the next cell in the map.
   template<class Function> void for_each(Function &F, std::false_type) const {
-    CellNext::template for_each<Function>(F);
+    CellNext::for_each(F);
   }
 
   /// This is invoked when all cells will be visited.
@@ -191,7 +191,7 @@ private:
   /// This is invoked to visit the next cell in the map.
   template<class Function>
   static void for_each_key(Function &F, std::false_type) {
-    CellNext::template for_each_key<Function>(F);
+    CellNext::for_each_key(F);
   }
 
   /// This is invoked when all definitions of cells will be visited.
@@ -204,12 +204,8 @@ private:
   ValueType mValue;
 };
 
-/// \brief Static list of different types.
-///
-/// TODO (kaniandr@gmail.com): Add for_each_type() static method.
-/// This is an analog of the for_each_key() method from the StaticMap class.
+/// Static list of different types.
 template<class... Types> struct TypeList;
-
 
 /// This provides access to a first type in the list.
 template<class Head, class... Tail> struct TypeList<Head, Tail...> {
@@ -224,10 +220,34 @@ template<class Head, class... Tail> struct TypeList<Head, Tail...> {
   static constexpr std::size_t size_of() {
     return bcl::size_of<Head, Tail...>();
   }
+
+  /// \brief Applies a specified function to each type in the list.
+  ///
+  /// The function will be applied to the current type. If this is not the last
+  /// type in the map then the following type will be visited.
+  /// \pre The `template<class Type> void operator()()` method must be defined
+  /// in the \c Function class.
+  /// TODO (kaniandr@gmail.com): Override and make it possible to specify a list
+  /// of functions.
+  /// TODO (kaniandr@gmail.com): Remove __GNUC__.
+  template<class Function> static void for_each_type(Function &&F) {
+#ifdef __GNUC__
+    F.template operator()<Type>();
+#else
+    F.operator()<Type>();
+#endif
+   Next::for_each_type(F);
+  }
 };
 
 /// This represents empty list of types.
-template<> struct TypeList<> {};
+template<> struct TypeList<> {
+  /// Returns number of types in the list.
+  static constexpr std::size_t size_of() { return 0; }
+
+  /// This is invoked when all types will be visited.
+  template<class Function> static void for_each_type(Function &) {}
+};
 
 /// \brief Determines whether the Type exists in the TypeList.
 ///
