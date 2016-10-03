@@ -137,10 +137,16 @@ public:
     mQueue->emplace(Args...);
   }
 
-  /// Exchanges the contents of the queue with those of other.
-  void swap(TransparentQueue &TQ) noexcept(
-      noexcept(std::swap(mValue, TQ.mValue)) &&
-      noexcept(mQueue->swap(TQ.mQueue))) {
+  /// \brief Exchanges the contents of the queue with those of other.
+  ///
+  /// TODO (kaniandr@gmail.com) : implement noexcept specification, note that
+  /// the following one does not work:
+  /// \code
+  /// noexcept(
+  ///   noexcept(std::swap(mValue, TQ.mValue)) &&
+  ///   noexcept(mQueue->swap(TQ.mQueue))) {
+  /// \endcode
+  void swap(TransparentQueue &TQ) {
     if (mIsSingle) {
       if (TQ.mIsSingle) {
         std::swap(mValue, TQ.mValue);
@@ -204,7 +210,7 @@ template<class Ty> inline bool operator>(
 /// Lexicographically compares the values in the queue.
 template<class Ty> inline bool operator<=(
   const TransparentQueue<Ty> &Left, const TransparentQueue<Ty> &Right) {
-  return !(Right < Left)
+  return !(Right < Left);
 }
 
 /// Lexicographically compares the values in the queue.
