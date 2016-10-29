@@ -682,7 +682,7 @@ namespace Utility
             if ( !object)
             {
                 Reset( );
-                return;
+                return this;
             }
 
             Super::m_object = object;
