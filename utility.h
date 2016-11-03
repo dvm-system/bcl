@@ -95,6 +95,7 @@ class Unassignable {
 protected:
   constexpr Unassignable() = default;
   ~Unassignable() = default;
+public:
   Unassignable & operator=(const Unassignable &) = delete;
 };
 
@@ -103,6 +104,7 @@ class Uncopyable {
 protected:
   constexpr Uncopyable() = default;
   ~Uncopyable() = default;
+public:
   Uncopyable(const Uncopyable &) = delete;
   Uncopyable & operator=(const Uncopyable &) = delete;
 };

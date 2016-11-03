@@ -12,9 +12,9 @@
 #ifndef TRANSPARENT_QUEUE_H
 #define TRANSPARENT_QUEUE_H
 
-#include <queue>
 #include <assert.h>
-
+#include <cstring>
+#include <queue>
 
 namespace bcl {
 /// \brief Simple queue that store pointers.
@@ -34,15 +34,17 @@ public:
   typedef typename Container::reference reference;
   typedef typename Container::const_reference const_reference;
 
-  /// Creates a queue that contains one pointer, the specified pointer must
-  /// not be null.
+  /// Creates an empty queue.
+  TransparentQueue() noexcept :
+    mIsSingle(true), mIsEmpty(true), mValue(nullptr) {}
+
+  /// Creates a queue that contains one pointer.
   explicit TransparentQueue(value_type V) noexcept :
-      mIsSingle(true), mValue(V) {
-    assert(V && "A value must not be null!");
-  }
+    mIsSingle(true), mIsEmpty(false), mValue(V) {}
 
   /// Copy constructor.
-  TransparentQueue(const TransparentQueue &TQ) : mIsSingle(TQ.mIsSingle) {
+  TransparentQueue(const TransparentQueue &TQ) :
+      mIsSingle(TQ.mIsSingle), mIsEmpty(TQ.mIsEmpty) {
     if (mIsSingle)
       mValue = TQ.mValue;
     else
@@ -52,6 +54,7 @@ public:
   /// Copy assignment.
   TransparentQueue & operator=(const TransparentQueue &TQ) {
     mIsSingle = TQ.mIsSingle;
+    mIsEmpty = TQ.mIsEmpty;
     if (mIsSingle)
       mValue = TQ.mValue;
     else
@@ -59,16 +62,20 @@ public:
   }
 
   /// Move constructor.
-  TransparentQueue(TransparentQueue &&TQ) : mIsSingle(TQ.mIsSingle) {
+  TransparentQueue(TransparentQueue &&TQ) :
+      mIsSingle(TQ.mIsSingle), mIsEmpty(TQ.mIsEmpty) {
     std::memmove(&mQueue, &TQ.mQueue, sizeof(TQ.mQueue));
     TQ.mIsSingle = true;
+    TQ.mIsEmpty = true;
   }
 
   /// Move assignment.
   TransparentQueue & operator=(TransparentQueue &&TQ) {
     mIsSingle = TQ.mIsSingle;
+    mIsEmpty = TQ.mIsEmpty;
     std::memmove(&mQueue, &TQ.mQueue, sizeof(TQ.mQueue));
     TQ.mIsSingle = true;
+    TQ.mIsEmpty = true;
   }
 
   /// Removes allocated memory if it is necessary.
@@ -82,6 +89,11 @@ public:
   /// Inserts an element V at the end of this queue.
   void push(value_type V) {
     if (mIsSingle) {
+      if (mIsEmpty) {
+        mIsEmpty = false;
+        mValue = V;
+        return;
+      }
       mIsSingle = false;
       auto Current = mValue;
       mQueue = new Container();
@@ -95,6 +107,7 @@ public:
     if (mIsSingle) {
       auto V = mValue;
       mValue = nullptr;
+      mIsEmpty = true;
       return V;
     }
     if (mQueue->empty())
@@ -106,12 +119,12 @@ public:
 
   /// Returns number of elements in this queue.
   size_type size() const {
-    return mIsSingle ? 1 : mQueue->size();
+    return mIsSingle ? mIsEmpty ? 0 : 1 : mQueue->size();
   }
 
   /// Returns true if the queue is empty.
   bool empty() const {
-    return mIsSingle ? false : mQueue->empty();
+    return mIsSingle ? mIsEmpty : mQueue->empty();
   }
 
   /// Returns reference to the first element in the queue.
@@ -150,11 +163,13 @@ public:
     if (mIsSingle) {
       if (TQ.mIsSingle) {
         std::swap(mValue, TQ.mValue);
+        std::swap(mIsEmpty, TQ.mIsEmpty);
       } else {
         Ty *Tmp = mValue;
         mIsSingle = false;
         mQueue = TQ.mQueue;
         TQ.mIsSingle = true;
+        TQ.mIsEmpty = mIsEmpty;
         TQ.mValue = Tmp;
       }
     } else {
@@ -163,6 +178,7 @@ public:
         TQ.mIsSingle = false;
         TQ.mQueue = mQueue;
         mIsSingle = true;
+        mIsEmpty = TQ.mIsEmpty;
         mValue = Tmp;
       } else {
         mQueue->swap(TQ.mQueue);
@@ -172,16 +188,53 @@ public:
 
   /// Compares the contents of two containers.
   bool operator==(const TransparentQueue &TQ) const {
-    return mIsSingle ? mValue == TQ.mValue : *mQueue == *TQ->mQueue;
+    if (size() != TQ.size())
+      return false;
+    if (mIsSingle) {
+      if (TQ.mIsSingle)
+        return mIsEmpty == TQ.mIsEmpty ?
+          mIsEmpty ? true : mValue == TQ.mValue : false;
+      else
+        return mIsEmpty == TQ.mQueue->empty() ?
+          mIsEmpty ? true : mValue == TQ.mQueue->front() : false;
+    } else {
+      if (TQ.mIsSingle)
+        return TQ.mIsEmpty == mQueue->empty() ?
+          TQ.mIsEmpty ? true : TQ.mValue == mQueue->front() : false;
+      else
+        return *mQueue == *TQ.mQueue;
+    }
   }
 
   /// Lexicographically compares the values in the queue.
   bool operator<(const TransparentQueue &TQ) const {
-    return mIsSingle ? mValue < TQ.mValue : mQueue < TQ.mQueue;
+    if (mIsSingle == TQ.mIsSingle) {
+      return mIsSingle ? mIsEmpty == TQ.mIsEmpty ?
+        (mIsEmpty ? false : mValue < TQ.mValue) :
+        (mIsEmpty ? true : false) :
+        *mQueue < *TQ.mQueue;
+    } else {
+      if (mIsSingle) {
+        Container Tmp;
+        if (!mIsEmpty)
+          Tmp.push(mValue);
+        return Tmp < *TQ.mQueue;
+      }
+      else {
+        Container Tmp;
+        if (!TQ.mIsEmpty)
+          Tmp.push(TQ.mValue);
+        return *mQueue < Tmp;
+      }
+    }
   }
 
 private:
-  bool mIsSingle;
+  struct {
+    bool mIsSingle : 1;
+    bool mIsEmpty : 1;
+  };
+
   union {
     value_type mValue;
     Container *mQueue;
