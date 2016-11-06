@@ -234,16 +234,16 @@ struct tagged_tuple: public std::tuple<typename Taggeds::type...> {
   constexpr tagged_tuple(ArgsTy&&... Args) :
     std::tuple<typename Taggeds::type...>(std::forward<ArgsTy>(Args)...) {}
 
-  template<class ArgTy,
+  template<class... ArgsTy,
     class = typename std::enable_if<
       std::is_constructible<
         std::tuple<typename Taggeds::type...>, ArgsTy&&...>::value>::type>
-  tagged_tuple & operator=(ArgTy&& Arg) noexcept(noexcept(
+  tagged_tuple & operator=(ArgsTy&&... Args) noexcept(noexcept(
     std::tuple<typename Taggeds::type...>::
-      operator=(std::forward<ArgTy>(Arg)))) {
+      operator=(std::forward<ArgsTy>(Args)...))) {
     return static_cast<tagged_tuple &>(
       std::tuple<typename Taggeds::type...>::
-        operator=(std::forward<ArgTy>(Arg)));
+        operator=(std::forward<ArgsTy>(Args)...));
   }
 
   template<class Tag,
