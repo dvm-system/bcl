@@ -34,6 +34,7 @@
 
 #include <cell.h>
 #include <utility.h>
+#include <tuple>
 #include <utility>
 
 namespace bcl {
@@ -221,7 +222,45 @@ private:
     return std::pair<typename Tagged1::type, typename Tagged2::type>::second;
   }
 };
+
+/// This is equivalent to std::tuple but also it provides way to access values
+/// via tag of a type (Tuple.get<Tag>()).
+template<class... Taggeds>
+struct tagged_tuple: public std::tuple<typename Taggeds::type...> {
+  template<class... ArgsTy,
+    class = typename std::enable_if<
+      std::is_constructible<
+        std::tuple<typename Taggeds::type...>, ArgsTy&&...>::value>::type>
+  constexpr tagged_tuple(ArgsTy&&... Args) :
+    std::tuple<typename Taggeds::type...>(std::forward<ArgsTy>(Args)...) {}
+
+  template<class ArgTy,
+    class = typename std::enable_if<
+      std::is_constructible<
+        std::tuple<typename Taggeds::type...>, ArgsTy&&...>::value>::type>
+  tagged_tuple & operator=(ArgTy&& Arg) noexcept(noexcept(
+    std::tuple<typename Taggeds::type...>::
+      operator=(std::forward<ArgTy>(Arg)))) {
+    return static_cast<tagged_tuple &>(
+      std::tuple<typename Taggeds::type...>::
+        operator=(std::forward<ArgTy>(Arg)));
+  }
+
+  template<class Tag,
+    class = typename std::enable_if<
+      !std::is_void<bcl::get_tagged<Tag, Taggeds...>>::value>::type>
+  bcl::get_tagged_t<Tag, Taggeds...> & get() noexcept {
+    return std::get<
+      bcl::index_of<bcl::get_tagged<Tag, Taggeds...>, Taggeds...>()>(*this);
+  }
+
+  template<class Tag,
+    class = typename std::enable_if<
+      !std::is_void<bcl::get_tagged<Tag, Taggeds...>>::value>::type>
+  const bcl::get_tagged_t<Tag, Taggeds...> & get() const noexcept {
+    return std::get<
+      bcl::index_of<bcl::get_tagged<Tag, Taggeds...>, Taggeds...>()>(*this);
+  }
+};
 }
 #endif//TAGGED_H
-
-
