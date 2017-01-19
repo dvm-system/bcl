@@ -865,11 +865,12 @@ private:
 };
 }
 
+namespace json {
 /// \brief Specialization of traits for JSON serializer.
 ///
 /// To use JSON serializer each trait in descriptor must provide name() method.
 template<class Ty, class TraitDescriptor>
-struct json::Traits<bcl::StaticTraitMap<Ty, TraitDescriptor>> {
+struct Traits<bcl::StaticTraitMap<Ty, TraitDescriptor>> {
 private:
   typedef bcl::StaticTraitMap<Ty, TraitDescriptor> StaticTraitMap;
 public:
@@ -886,7 +887,7 @@ public:
 };
 
 template<class Ty, class TraitDescriptor, class Trait>
-struct json::CellTraits<
+struct CellTraits<
   bcl::detail::StaticTraitMapKey<Ty, TraitDescriptor, Trait>> {
 private:
   typedef bcl::detail::StaticTraitMapKey<Ty, TraitDescriptor, Trait> CellKey;
@@ -909,4 +910,5 @@ public:
     return TraitType::name();
   }
 };
+}
 #endif//TRAIT_H
