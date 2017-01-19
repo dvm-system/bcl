@@ -16,12 +16,27 @@
 #include <functional>
 #include <string>
 
-#ifdef BCL_EXPORTING
-#define BCL_DECLSPEC __declspec(dllexport)
+#if defined _WIN32 || defined _CYGWIN
+#  ifdef BCL_EXPORTING
+#    ifdef __GNUC__
+#      define BCL_DECLSPEC __attribute__ ((dllexport))
+#    else
+#      define BCL_DECLSPEC __declspec(dllexport)
+#    endif
+#  else
+#    ifdef __GNUC__
+#      define BCL_DECLSPEC __attribute__ (dllimport))
+#    else
+#      define BCL_DECLSPEC __declspec(dllimport)
+#    endif      
+#  endif
 #else
-#define BCL_DECLSPEC __declspec(dllimport)
+#  if __GNUC__ > 4
+#    define BCL_DECLSPEC __attribute__ ((visibility ("default")))
+#  else
+#    define BCL_DECLSPEC
+#  endif
 #endif
-
 
 namespace bcl {
 /// Interface to connect different entities in a network.
