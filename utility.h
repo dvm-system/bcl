@@ -14,6 +14,14 @@
 
 #include <type_traits>
 
+/// \brief This can be used to set list of parameters as single parameter
+/// of a macro.
+///
+/// Usage: SOME_MACRO(BCL_JOIN(std::map<int, int>)).
+/// In this case ',' does not split std::map<...> into two separate parameters,
+/// SOME_MACRO(std::map<int, int>) will not work.
+# define BCL_JOIN(...) __VA_ARGS__
+
 namespace bcl {
 /// \brief Type of an attribute identifier.
 ///
@@ -172,6 +180,12 @@ template<class... Args> inline constexpr std::size_t size_of() {
 /// supports push_back(Element &) method.
 template<class Coll, class Element> struct PushBackInserter {
   inline static void insert(Coll &C, Element &E) { C.push_back(E); }
+};
+
+/// Provides method to count the number of inserted elements. Counter of type Ty
+/// should support operator++() method.
+template<class Ty, class Element> struct CountInserter {
+  inline static void insert(Ty &C, Element &) { ++C; }
 };
 
 /// Return true if this character is non-new-line whitespace:

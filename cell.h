@@ -46,6 +46,15 @@ public:
   /// It is also possible to use std::is_empty to check whether the map
   /// is empty.
   static constexpr bool empty() { return true; }
+
+  /// Applies a specified function to a definition of each key in the map.
+  template<class Function> static void for_each_key(Function &&) {}
+
+  /// Applies a specified function to each cell in the map.
+  template<class Function> void for_each(Function &&F) {}
+
+  /// Applies a specified function to each cell in the map.
+  template<class Function> void for_each(Function &&F) const {}
 };
 
 /// \brief This adds a new cell of data to the beginning of a static map.
@@ -67,6 +76,18 @@ public:
 
   /// The constant reference to a value.
   typedef const ValueType & ReferenceC;
+
+  /// Default constructor.
+  StaticMap() = default;
+
+  /// Initializes all values in a map.
+  template<class HTy, class... TTy,
+    typename = typename std::enable_if<
+      !std::is_base_of<
+        StaticMap, typename std::decay<HTy>::type>::value>::type>
+  explicit StaticMap(HTy &&H, TTy&&... T) :
+    mValue(std::forward<HTy>(H)),
+    CellNext(std::forward<TTy>(T)...) {}
 
   /// \brief Returns true if the map is empty, otherwise returns false.
   ///
@@ -199,7 +220,7 @@ private:
   static void for_each_key(Function &, std::true_type) { }
 
   /// Checks requirements for static map usage.
-  constexpr static void check_requirements();
+  static void check_requirements();
 
   ValueType mValue;
 };
@@ -352,7 +373,7 @@ template<class... Types> class StaticTypeMap {
     template<class CellTy> void operator()(CellTy *C) {
       typedef typename CellTy::CellKey CellKey;
       typedef typename CellTy::ValueType ValueType;
-      mFunction(C->value<CellKey>());
+      mFunction(C->template value<CellKey>());
     }
 
   private:
@@ -376,6 +397,17 @@ template<class... Types> class StaticTypeMap {
   };
 
 public:
+  /// Default constructor.
+  StaticTypeMap() = default;
+
+  /// Initializes all values in a map.
+  template<class Head, class... Tail,
+    typename = typename std::enable_if<
+      !std::is_base_of<
+        StaticTypeMap, typename std::decay<Head>::type>::value>::type>
+    explicit StaticTypeMap(Head &&H, Tail&&... T) :
+      mMap(std::forward<Head>(H), std::forward<Tail>(T)...) {}
+
   /// \brief Applies a specified function to each type in the map.
   ///
   /// \pre The `template<class Type> void operator()()` method must be defined
@@ -389,22 +421,22 @@ public:
 
   /// Returns a value of the specified type.
   template<class Type> Type & value() {
-    return mMap.value<StaticMapKey<Type> >();
+    return mMap.template value<StaticMapKey<Type> >();
   }
 
   /// Returns a value of the specified type.
   template<class Type> const Type & value() const {
-    return mMap.value<StaticMapKey<Type> >();
+    return mMap.template value<StaticMapKey<Type> >();
   }
 
   /// Returns a value of the specified type.
   template<class Type> Type & operator[](Type) {
-     return mMap.value<StaticMapKey<Type> >();
+     return mMap.template value<StaticMapKey<Type> >();
   }
 
   /// Returns a value of the specified type.
   template<class Type> const Type & operator[](Type) const {
-    return mMap.value<StaticMapKey<Type> >();
+    return mMap.template value<StaticMapKey<Type> >();
   }
 
   /// \brief Applies a specified function to each cell in the map.
@@ -507,7 +539,7 @@ template<class What> struct IsCellExist<StaticMap<>, What> :
 };
 
 template<class Head, class... Tail>
-constexpr inline void StaticMap<Head, Tail...>::check_requirements() {
+inline void StaticMap<Head, Tail...>::check_requirements() {
   typedef typename StaticMap<Head, Tail...>::CellKey CellKey;
   typedef typename StaticMap<Head, Tail...>::CellNext CellNext;
   static_assert(!IsCellExist<CellNext, CellKey>::value,

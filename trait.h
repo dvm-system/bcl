@@ -15,10 +15,11 @@
 #define TRAIT_H
 
 #include <climits>
-#include <cell.h>
-#include <utility.h>
 #include <type_traits>
 #include <bitset>
+#include "cell.h"
+#include "utility.h"
+#include "Json.h"
 
 namespace bcl {
 /// This type represents a key of a trait.
@@ -448,7 +449,7 @@ public:
   template<class... Traits> void set() {
     auto constexpr ConflictMasks = ~joinConflict<Traits...>();;
     auto constexpr Keys = joinKey<Traits...>() & ConflictMasks;
-    mTD = mTD & ConflictMasks | Keys;
+    mTD = (mTD & ConflictMasks) | Keys;
   }
 
   /// Unset all specified traits.
@@ -593,7 +594,9 @@ public:
   TraitSet(TraitDescriptor &&TD) : mTD(std::move(TD)) {}
 
   /// Checks whether a trait is set.
-  template<class... Traits> bool is() const { return mTD.is<Traits...>(); }
+  template<class... Traits> bool is() const {
+    return mTD.template is<Traits...>();
+  }
 
   /// \brief Executes function for each trait which is set and belongs to a
   /// group that contains a specified trait.
@@ -602,7 +605,7 @@ public:
   /// must be defined in the \c Function class.
   template<class Trait, class Function>
   void for_each_in_group(Function &&F) const {
-    mTD.for_each_in_group<Trait>(std::forward<Function>(F));
+    mTD.template for_each_in_group<Trait>(std::forward<Function>(F));
   }
 
   /// \brief Executes function for each trait which is set.
@@ -620,7 +623,7 @@ public:
   /// must be defined in the \c Function class.
   template<class Trait, class Function>
   void for_each_conflict(Function &&F) const {
-    mTD.for_each_conflict<Trait>(std::forward<Function>(F));
+    mTD.template for_each_conflict<Trait>(std::forward<Function>(F));
   }
 
   /// \brief Executes function for each available trait.
@@ -647,7 +650,7 @@ public:
     }
     if (!mValues.empty())
       mTD.template for_each_conflict<Trait>(ConflictsResolver<Trait>(&mValues));
-    mTD.set<Trait>();
+    mTD.template set<Trait>();
     mValues.insert(
       std::make_pair(mTD.template getKey<Trait>(), reinterpret_cast<void *>(T)));
   }
@@ -689,6 +692,15 @@ private:
   TraitDescriptor mTD;
 };
 
+namespace detail {
+/// Wrapper which constructs a key in map for a specified trait.
+template<class Ty, class TraitDescriptor, class Trait>
+struct StaticTraitMapKey {
+  typedef Ty ValueType;
+  typedef Trait TraitType;
+};
+}
+
 /// \brief This is a static map where each trait in descriptor is treated as
 /// a key with value type equal to Ty.
 ///
@@ -696,11 +708,11 @@ private:
 /// \tparam Ty Type of values stored in the map.
 /// \tparam TraitDescriptor Set of available traits (see TraitDescriptor<...>).
 template<class Ty, class TraitDescriptor> class StaticTraitMap {
+  friend class json::Traits<StaticTraitMap>;
+
   /// Wrapper which constructs a key in map for a specified trait.
-  template<class Trait> struct StaticMapKey {
-    typedef Ty ValueType;
-    typedef Trait TraitType;
-  };
+  template<class Trait>
+  using StaticMapKey = detail::StaticTraitMapKey<Ty, TraitDescriptor, Trait>;
 
   /// Helper class to constructs keys.
   template<class Trait> struct KeyConstructor {
@@ -723,9 +735,9 @@ template<class Ty, class TraitDescriptor> class StaticTraitMap {
       typedef typename CellTy::ValueType ValueType;
       typedef typename CellKey::TraitType TraitType;
 #ifdef __GNUC__
-      mFunction.template operator()<TraitType>(C->value<CellKey>());
+      mFunction.template operator()<TraitType>(C->template value<CellKey>());
 #else
-      mFunction.operator()<TraitType>(C->value<CellKey>());
+      mFunction.operator()<TraitType>(C->template value<CellKey>());
 #endif
     }
 
@@ -764,24 +776,35 @@ public:
     MapType::for_each_key(Wrapper);
   }
 
+  /// Default constructor.
+  StaticTraitMap() = default;
+
+  /// Initializes all values in a map.
+  template<class Head, class... Tail,
+    typename = typename std::enable_if<
+      !std::is_base_of<
+        StaticTraitMap, typename std::decay<Head>::type>::value>::type>
+    explicit StaticTraitMap(Head &&H, Tail&&... T) :
+      mMap(std::forward<Head>(H), std::forward<Tail>(T)...) {}
+
   /// Returns a value of type Ty related to a specified trait.
   template<class Trait> Ty & value() {
-    return mMap.value<StaticMapKey<Trait> >();
+    return mMap.template value<StaticMapKey<Trait> >();
   }
 
   /// Returns a value of type Ty related to a specified trait.
   template<class Trait> const Ty & value() const {
-    return mMap.value<StaticMapKey<Trait> >();
+    return mMap.template value<StaticMapKey<Trait> >();
   }
 
   /// Returns a value of type Ty related to a specified trait.
   template<class Trait> Ty & operator[](Trait) {
-    return mMap.value<StaticMapKey<Trait>>();
+    return mMap.template value<StaticMapKey<Trait>>();
   }
 
   /// Returns a value of type Ty related to a specified trait.
   template<class Trait> const Ty & operator[](Trait) const {
-    return mMap.value<StaticMapKey<Trait>>();
+    return mMap.template value<StaticMapKey<Trait>>();
   }
 
   /// \brief Applies a specified function to each trait in the map.
@@ -841,4 +864,49 @@ private:
   TraitSet *mTS;
 };
 }
+
+/// \brief Specialization of traits for JSON serializer.
+///
+/// To use JSON serializer each trait in descriptor must provide name() method.
+template<class Ty, class TraitDescriptor>
+struct json::Traits<bcl::StaticTraitMap<Ty, TraitDescriptor>> {
+private:
+  typedef bcl::StaticTraitMap<Ty, TraitDescriptor> StaticTraitMap;
+public:
+  inline static bool parse(StaticTraitMap &Dest, Lexer &Lex) {
+    return Traits<typename StaticTraitMap::MapType>::parse(Dest.mMap, Lex);
+  }
+  inline static bool parse(StaticTraitMap &Dest, Lexer &Lex,
+      std::pair<Position, Position> Key) {
+    return Traits<typename StaticTraitMap::MapType>::parse(Dest.mMap, Lex, Key);
+  }
+  inline static void unparse(String &JSON, const StaticTraitMap &Obj) {
+    Traits<typename StaticTraitMap::MapType>::unparse(JSON, Obj.mMap);
+  }
+};
+
+template<class Ty, class TraitDescriptor, class Trait>
+struct json::CellTraits<
+  bcl::detail::StaticTraitMapKey<Ty, TraitDescriptor, Trait>> {
+private:
+  typedef bcl::detail::StaticTraitMapKey<Ty, TraitDescriptor, Trait> CellKey;
+  typedef typename CellKey::TraitType TraitType;
+public:
+  typedef typename CellKey::ValueType ValueType;
+  inline static bool parse(ValueType &Dest, Lexer &Lex)
+    noexcept(
+      noexcept(Traits<ValueType>::parse(Dest, Lex))) {
+    return Traits<ValueType>::parse(Dest, Lex);
+  }
+  inline static void unparse(String &JSON, const ValueType &Obj)
+    noexcept(
+      noexcept(Traits<ValueType>::unparse(JSON, Obj))) {
+    Traits<ValueType>::unparse(JSON, Obj);
+  }
+  inline static typename std::result_of<
+    decltype(&TraitType::name)()>::type name()
+      noexcept(noexcept(TraitType::name())) {
+    return TraitType::name();
+  }
+};
 #endif//TRAIT_H
