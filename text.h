@@ -96,15 +96,6 @@ namespace Base
         return buffer; 
     }
 
-#ifdef UNICODE
-    //! Преобразует число в строку в формате UNICODE.
-    inline Text ToText( int value) { return ToTextUnicode( value); }
-    //! Копирует строки в формате UNICODE.
-    inline void CopyString( Char *to, size_t toSize, const Char *from)
-    {
-        CopyUnicode( to, toSize, from); 
-    }
-#else
     //! Преобразует число в строку в формате ANSI.
     inline Text ToText( int value) { return ToTextAnsi( value); }
     //! Копирует строки в формате ANSI.
@@ -112,7 +103,6 @@ namespace Base
     {
         CopyAnsi( to, toSize, from); 
     }
-#endif
 }
 
 #endif//TEXT_H
