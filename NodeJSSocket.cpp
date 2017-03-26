@@ -33,6 +33,7 @@
 #include <string>
 #include <stack>
 #include "Socket.h"
+#include "utility.h"
 
 using namespace v8;
 using namespace bcl;
@@ -61,7 +62,7 @@ public:
   /// Adds the listener function to the end of array of listeners, which are
   /// invoked when some data are recived.
   void receive(const ReceiveCallback &F) const override {
-    mReceiveCallbacks.push(std::make_unique<ReceiveCallback>(F));
+    mReceiveCallbacks.push(bcl::make_unique<ReceiveCallback>(F));
     Local<FunctionTemplate> Tpl =
       FunctionTemplate::New(mIsolate, receiveWrapper,
         External::New(mIsolate, mReceiveCallbacks.top().get()));
@@ -74,7 +75,7 @@ public:
   /// Adds the listener function to the end of array of listeners, which are
   /// invoked when some data are received.
   void closed(const ClosedCallback &F) const override {
-    mClosedCallbacks.push(std::make_unique<ClosedCallback>(F));
+    mClosedCallbacks.push(bcl::make_unique<ClosedCallback>(F));
     Local<FunctionTemplate> Tpl =
       FunctionTemplate::New(mIsolate, closedWrapper,
         External::New(mIsolate, mClosedCallbacks.top().get()));
@@ -129,7 +130,7 @@ private:
 /// This represents client/server connetction, server will be started when
 /// connection is created.
 class Connection : public node::ObjectWrap {
-  typedef Socket<std::string> Socket;
+  typedef Socket<std::string> SocketTy;
 
 public:
   /// Performs initialization to propose creation of new instancies of an object.
@@ -161,14 +162,13 @@ public:
 
 private:
   /// Constructor.
-  explicit Connection(const Socket *S) : mSocket(S) {}
+  explicit Connection(const SocketTy *S) : mSocket(S) {}
 
   /// Destructor.
   ~Connection() { delete mSocket; }
 
   /// Starts execution of a server.
   static void startServer(const FunctionCallbackInfo<Value>& Args) {
-    auto *I = Args.GetIsolate();
     auto* C = ObjectWrap::Unwrap<Connection>(Args.Holder());
     createServer(C->mSocket);
   }
@@ -206,7 +206,7 @@ private:
   }
 
   static Persistent<Function> mCtor;
-  const Socket *mSocket;
+  const SocketTy *mSocket;
 };
 
 Persistent<Function> Connection::mCtor;
@@ -222,3 +222,4 @@ void init(Local<Object> Exports, Local<Object> Module) {
 
 NODE_MODULE(bclSocket, init)
 }
+

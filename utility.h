@@ -196,6 +196,38 @@ static inline bool isWhitespace(unsigned char c) {
   default: return false;
   }
 }
+
+/// \brief Constructs an object of non-array type T and passes the given args
+/// to the constructor of T.
+///
+/// This function is availablen since C++ 14, so this implimentation is
+/// convinient to use if only C++ 11 is available.
+/// \return `unique_ptr<T>` which owns the object.
+template <class T, class... Args>
+typename std::enable_if<!std::is_array<T>::value, std::unique_ptr<T>>::type
+make_unique(Args &&... args) {
+  return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+/// \brief Constructs an array of unknown bound T.
+///
+/// This function is availablen since C++ 14, so this implimentation is
+/// convinient to use if only C++ 11 is available.
+/// \pre This function is overloaded for arrays of unknown bounds.
+/// \param n size of the new array.
+/// \return `unique_ptr<T>` which owns the object.
+template <class T>
+typename std::enable_if<
+ std::is_array<T>::value && std::extent<T>::value == 0,
+ std::unique_ptr<T>>::type
+make_unique(size_t n) {
+  return std::unique_ptr<T>(new typename std::remove_extent<T>::type[n]());
+}
+
+/// Construction of arrays of known bound is disallowed.
+template <class T, class... Args>
+typename std::enable_if<std::extent<T>::value != 0>::type
+make_unique(Args &&...) = delete;
 }
 
 #ifndef NULL
