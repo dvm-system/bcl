@@ -56,9 +56,10 @@ private:
   void setPrev(Chain *N) {
     if (N) {
       N->mPrev = mPrev;
-      N->mNext = mNext;
+      N->mNext = this;
     }
-    mPrev->mNext = N;
+    if (mPrev)
+      mPrev->mNext = N;
     mPrev = N;
   }
 
@@ -240,6 +241,28 @@ public:
   /// Dereferences this iterator.
   value_type * operator->() const noexcept {
     return const_cast<value_type *>(Base::operator->());
+  }
+
+  /// Preincrement, this node must not be null.
+  ChainIterator & operator++() {
+    Base::operator++();
+    return *this;
+  }
+
+  /// Postincrement, this node must not be null.
+  ChainIterator operator++(int) {
+    ChainIterator Tmp = *this; ++*this; return Tmp;
+  }
+
+  /// Predecrement, this node must not be null.
+  ChainIterator & operator--() {
+    Base::operator--();
+    return *this;
+  }
+
+  /// Postdecrement, this node must not be null.
+  ChainIterator operator--(int) {
+    ChainIterator Tmp = *this; ++*this; return Tmp;
   }
 
   /// Returns a current node.
