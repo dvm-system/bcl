@@ -473,6 +473,12 @@ public:
     return mTD & Keys;
   }
 
+  /// Compares two descriptors.
+  bool operator==(const TraitDescriptor &TD) const { return mTD == TD.mTD; }
+
+  /// Compares two descriptors.
+  bool operator!=(const TraitDescriptor &TD) const { return !operator==(TD); }
+
   /// \brief Executes function for each trait which is set and conflicts with
   /// a specified trait.
   ///
