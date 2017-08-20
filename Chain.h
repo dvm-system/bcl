@@ -42,7 +42,8 @@ public:
 
 private:
   /// Sets a specified node as a next node for this one.
-  void setNext(Chain *N) {
+  void setNext(Chain *N) noexcept {
+    assert(N != this && "A node must not follow itself!");
     if (N) {
       N->mNext = mNext;
       N->mPrev = this;
@@ -53,7 +54,8 @@ private:
   }
 
   /// Sets a specified node as a previous node for this one.
-  void setPrev(Chain *N) {
+  void setPrev(Chain *N) noexcept {
+    assert(N != this && "A node must not precede itself!");
     if (N) {
       N->mPrev = mPrev;
       N->mNext = this;
@@ -76,8 +78,8 @@ private:
   const Ty * getPrev() const noexcept { return static_cast<const Ty *>(mPrev); }
 
 private:
-  template<class Ty, class Tag> friend class ChainTraits;
-  template<class Ty, class Tag> friend class ChainIterator;
+  template<class Ty, class Tag> friend struct ChainTraits;
+  template<class Ty, class Tag> friend struct ChainIterator;
 
   Chain *mPrev = nullptr;
   Chain *mNext = nullptr;
@@ -89,37 +91,43 @@ template<class Ty, class Tag = void> struct ChainTraits {
     "Each node in a chain must inherit chain implementation!");
 
   /// Sets a specified node Next as a next node for N.
-  static void setNext(Chain<Ty, Tag> *Next, Chain<Ty, Tag> *N) {
+  static void setNext(Chain<Ty, Tag> *Next, Chain<Ty, Tag> *N)
+    noexcept(noexcept(N->setNext(Next))) {
     assert(N && "Chain must not be null!");
     N->setNext(Next);
   }
 
   /// Sets a specified node as a Prev node for N.
-  static void setPrev(Ty *Prev, Chain<Ty, Tag> *N) {
+  static void setPrev(Ty *Prev, Chain<Ty, Tag> *N)
+      noexcept(noexcept(N->setPrev(Prev))) {
     assert(N && "Chain must not be null!");
     N->setPrev(Prev);
   }
 
   /// Returns a next node.
-  static Ty * getNext(Chain<Ty, Tag> *N) noexcept {
+  static Ty * getNext(Chain<Ty, Tag> *N)
+      noexcept(noexcept(N->getNext())) {
     assert(N && "Node must not be null!");
-    return Chain<Ty, Tag>(*N).getNext();
+    return N->getNext();
   }
 
   /// Returns a next node.
-  static const Ty * getNext(const Chain<Ty, Tag> *N) noexcept {
+  static const Ty * getNext(const Chain<Ty, Tag> *N)
+      noexcept(noexcept(N->getNext())) {
     assert(N && "Node must not be null!");
     return N->getNext();
   }
 
   /// Returns a previous node.
-  static Ty * getPrev(Chain<Ty, Tag> *N) noexcept {
+  static Ty * getPrev(Chain<Ty, Tag> *N)
+      noexcept(noexcept(N->getPrev())) {
     assert(N && "Node must not be null!");
     return N->getPrev();
   }
 
   /// Returns a previous node.
-  static const Ty * getPrev(const Chain<Ty, Tag> *N) noexcept {
+  static const Ty * getPrev(const Chain<Ty, Tag> *N)
+      noexcept(noexcept(N->getPrev())) {
     assert(N && "Node must not be null!");
     return N->getPrev();
   }
@@ -175,39 +183,45 @@ public:
   value_type * operator->() const noexcept { return &operator*(); }
 
   /// Preincrement, this node must not be null.
-  ChainIteratorC & operator++() {
+  ChainIteratorC & operator++()
+      noexcept(noexcept(ChainTraits<Ty, Tag>::getNext(mCurrent))) {
     assert(mCurrent && "Advancing null node!");
     mCurrent = ChainTraits<Ty, Tag>::getNext(mCurrent);
     return *this;
   }
 
   /// Postincrement, this node must not be null.
-  ChainIteratorC operator++(int) {
+  ChainIteratorC operator++(int)
+      noexcept(noexcept(ChainIteratorC::operator++())) {
     ChainIteratorC Tmp = *this; ++*this; return Tmp;
   }
 
   /// Predecrement, this node must not be null.
-  ChainIteratorC & operator--() {
+  ChainIteratorC & operator--()
+      noexcept(noexcept(ChainTraits<Ty, Tag>::getPrev(mCurrent))) {
     assert(mCurrent && "Decreasing null node!!");
     mCurrent = ChainTraits<Ty, Tag>::getPrev(mCurrent);
     return *this;
   }
 
   /// Postdecrement, this node must not be null.
-  ChainIteratorC operator--(int) {
+  ChainIteratorC operator--(int)
+      noexcept(noexcept(ChainIteratorC::operator--())) {
     ChainIteratorC Tmp = *this; ++*this; return Tmp;
   }
 
   /// Returns a current node.
-  const Ty * get() const noexcept { &operator*(); }
+  const Ty * get() const noexcept { return &operator*(); }
 
   /// Returns a next node.
-  const Ty * getNext() const noexcept {
+  const Ty * getNext() const
+      noexcept(noexcept(ChainTraits<Ty, Tag>::getNext(mCurrent))) {
     return ChainTraits<Ty, Tag>::getNext(mCurrent);
   }
 
   /// Returns a previous node.
-  const Ty * getPrev() const noexcept {
+  const Ty * getPrev() const
+      noexcept(noexcept(ChainTraits<Ty, Tag>::getPrev(mCurrent))) {
     return ChainTraits<Ty, Tag>::getPrev(mCurrent);
   }
 
@@ -244,24 +258,28 @@ public:
   }
 
   /// Preincrement, this node must not be null.
-  ChainIterator & operator++() {
+  ChainIterator & operator++()
+      noexcept(noexcept(Base::operator++())) {
     Base::operator++();
     return *this;
   }
 
   /// Postincrement, this node must not be null.
-  ChainIterator operator++(int) {
+  ChainIterator operator++(int)
+      noexcept(noexcept(ChainIterator::operator++())) {
     ChainIterator Tmp = *this; ++*this; return Tmp;
   }
 
   /// Predecrement, this node must not be null.
-  ChainIterator & operator--() {
+  ChainIterator & operator--()
+      noexcept(noexcept(Base::operator--())) {
     Base::operator--();
     return *this;
   }
 
   /// Postdecrement, this node must not be null.
-  ChainIterator operator--(int) {
+  ChainIterator operator--(int)
+      noexcept(noexcept(ChainIterator::operator--())) {
     ChainIterator Tmp = *this; ++*this; return Tmp;
   }
 
@@ -269,22 +287,26 @@ public:
   Ty * get() const noexcept { return const_cast<Ty *>(Base::get()); }
 
   /// Returns a next node.
-  Ty * getNext() const noexcept {
+  Ty * getNext() const
+      noexcept(noexcept(Base::getNext())) {
     return const_cast<Ty *>(Base::getNext());
   }
 
   /// Returns a previous node.
-  Ty * getPrev() const noexcept {
+  Ty * getPrev() const
+      noexcept(noexcept(Base::getPrev())) {
     return const_cast<Ty *>(Base::getPrev());
   }
 
   /// Sets a specified node as a next node for this one.
-  void setNext(const Chain<Ty, Tag> *N) const noexcept {
+  void setNext(Ty *N) const
+      noexcept(noexcept(ChainTraits<Ty, Tag>::setNext(N, get()))) {
     ChainTraits<Ty, Tag>::setNext(N, get());
   }
 
   /// Sets a specified node as a previous node for this one.
-  void setPrev(const Chain<Ty, Tag> *N) const noexcept {
+  void setPrev(Ty *N) const
+      noexcept(noexcept(ChainTraits<Ty, Tag>::setPrev(N, get()))) {
     ChainTraits<Ty, Tag>::setPrev(N, get());
   }
 };
