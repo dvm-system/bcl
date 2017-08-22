@@ -41,8 +41,10 @@ public:
   }
 
 private:
-  /// Sets a specified node as a next node for this one.
-  void setNext(Chain *N) noexcept {
+  /// \brief Sets a specified node as a next node for this one.
+  ///
+  /// The node N will be extracted from its owner and insert into this chain.
+  void spliceNext(Chain *N) noexcept {
     assert(N != this && "A node must not follow itself!");
     if (N) {
       N->mNext = mNext;
@@ -53,8 +55,23 @@ private:
     mNext = N;
   }
 
-  /// Sets a specified node as a previous node for this one.
-  void setPrev(Chain *N) noexcept {
+  /// \brief Sets a specified node as a next node for this one.
+  ///
+  /// The node N will be treated as a start node of chain which should be
+  /// merged to this node.
+  void mergeNext(Chain *N) noexcept {
+    assert(N != this && "A node must not follow itself!");
+    if (N)
+      N->mPrev = this;
+    if (mNext)
+      mNext->mPrev = nullptr;
+    mNext = N;
+  }
+
+  /// \brief Sets a specified node as a previous node for this one.
+  ///
+  /// The node N will be extracted from its owner and insert into this chain.
+  void splicePrev(Chain *N) noexcept {
     assert(N != this && "A node must not precede itself!");
     if (N) {
       N->mPrev = mPrev;
@@ -62,6 +79,19 @@ private:
     }
     if (mPrev)
       mPrev->mNext = N;
+    mPrev = N;
+  }
+
+  /// \brief Sets a specified node as a previous node for this one.
+  ///
+  /// The node N will be treated as a start node of chain which should be
+  /// merged to this node.
+  void mergePrev(Chain *N) noexcept {
+    assert(N != this && "A node must not precede itself!");
+    if (N)
+      N->mNext = this;
+    if (mPrev)
+      mPrev->mNext = nullptr;
     mPrev = N;
   }
 
@@ -90,18 +120,42 @@ template<class Ty, class Tag = void> struct ChainTraits {
   static_assert(std::is_base_of<Chain<Ty, Tag>, Ty>::value,
     "Each node in a chain must inherit chain implementation!");
 
-  /// Sets a specified node Next as a next node for N.
-  static void setNext(Chain<Ty, Tag> *Next, Chain<Ty, Tag> *N)
-    noexcept(noexcept(N->setNext(Next))) {
+  /// \brief Sets a specified node as a next node for N.
+  ///
+  /// The node Next will be extracted from its owner and insert into this chain.
+  static void spliceNext(Chain<Ty, Tag> *Next, Chain<Ty, Tag> *N)
+    noexcept(noexcept(N->spliceNext(Next))) {
     assert(N && "Chain must not be null!");
-    N->setNext(Next);
+    N->spliceNext(Next);
   }
 
-  /// Sets a specified node as a Prev node for N.
-  static void setPrev(Ty *Prev, Chain<Ty, Tag> *N)
-      noexcept(noexcept(N->setPrev(Prev))) {
+  /// \brief Sets a specified node as a next node for N.
+  ///
+  /// The node Next will be treated as a start node of chain which should be
+  /// merged to this node.
+  static void mergeNext(Chain<Ty, Tag> *Next, Chain<Ty, Tag> *N)
+    noexcept(noexcept(N->mergeNext(Next))) {
     assert(N && "Chain must not be null!");
-    N->setPrev(Prev);
+    N->mergeNext(Next);
+  }
+
+  /// \brief Sets a specified node as a previous node for N.
+  ///
+  /// The node Prev will be extracted from its owner and insert into this chain.
+  static void splicePrev(Ty *Prev, Chain<Ty, Tag> *N)
+      noexcept(noexcept(N->splicePrev(Prev))) {
+    assert(N && "Chain must not be null!");
+    N->splicePrev(Prev);
+  }
+
+  /// \brief Sets a specified node as a previous node for N.
+  ///
+  /// The node Prev will be treated as a start node of chain which should be
+  /// merged to this node.
+  static void mergePrev(Ty *Prev, Chain<Ty, Tag> *N)
+      noexcept(noexcept(N->mergePrev(Prev))) {
+    assert(N && "Chain must not be null!");
+    N->mergePrev(Prev);
   }
 
   /// Returns a next node.
@@ -298,16 +352,38 @@ public:
     return const_cast<Ty *>(Base::getPrev());
   }
 
-  /// Sets a specified node as a next node for this one.
-  void setNext(Ty *N) const
-      noexcept(noexcept(ChainTraits<Ty, Tag>::setNext(N, get()))) {
-    ChainTraits<Ty, Tag>::setNext(N, get());
+  /// \brief Sets a specified node as a next node for this one.
+  ///
+  /// The node N will be extracted from its owner and insert into this chain.
+  void spliceNext(Ty *N) const
+      noexcept(noexcept(ChainTraits<Ty, Tag>::spliceNext(N, get()))) {
+    ChainTraits<Ty, Tag>::spliceNext(N, get());
   }
 
-  /// Sets a specified node as a previous node for this one.
-  void setPrev(Ty *N) const
-      noexcept(noexcept(ChainTraits<Ty, Tag>::setPrev(N, get()))) {
-    ChainTraits<Ty, Tag>::setPrev(N, get());
+  /// \brief Sets a specified node as a next node for this one.
+  ///
+  /// The node N will be treated as a start node of chain which should be
+  /// merged to this node.
+  void mergeNext(Ty *N) const
+      noexcept(noexcept(ChainTraits<Ty, Tag>::mergeNext(N, get()))) {
+    ChainTraits<Ty, Tag>::mergeNext(N, get());
+  }
+
+  /// \brief Sets a specified node as a previous node for this one.
+  ///
+  /// The node N will be extracted from its owner and insert into this chain.
+  void splicePrev(Ty *N) const
+      noexcept(noexcept(ChainTraits<Ty, Tag>::splicePrev(N, get()))) {
+    ChainTraits<Ty, Tag>::splicePrev(N, get());
+  }
+
+  /// \brief Sets a specified node as a previous node for this one.
+  ///
+  /// The node N will be treated as a start node of chain which should be
+  /// merged to this node.
+  void mergePrev(Ty *N) const
+      noexcept(noexcept(ChainTraits<Ty, Tag>::mergePrev(N, get()))) {
+    ChainTraits<Ty, Tag>::mergePrev(N, get());
   }
 };
 
