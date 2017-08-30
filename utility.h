@@ -200,8 +200,8 @@ static inline bool isWhitespace(unsigned char c) {
 /// \brief Constructs an object of non-array type T and passes the given args
 /// to the constructor of T.
 ///
-/// This function is availablen since C++ 14, so this implimentation is
-/// convinient to use if only C++ 11 is available.
+/// This function is available since C++ 14, so this implementation is
+/// convenient to use if only C++ 11 is available.
 /// \return `unique_ptr<T>` which owns the object.
 template <class T, class... Args>
 typename std::enable_if<!std::is_array<T>::value, std::unique_ptr<T>>::type
@@ -211,8 +211,8 @@ make_unique(Args &&... args) {
 
 /// \brief Constructs an array of unknown bound T.
 ///
-/// This function is availablen since C++ 14, so this implimentation is
-/// convinient to use if only C++ 11 is available.
+/// This function is available since C++ 14, so this implementation is
+/// convenient to use if only C++ 11 is available.
 /// \pre This function is overloaded for arrays of unknown bounds.
 /// \param n size of the new array.
 /// \return `unique_ptr<T>` which owns the object.

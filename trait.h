@@ -642,7 +642,7 @@ public:
 
   /// \brief Add description of a specified trait.
   ///
-  /// If the trait has not be set in descriptor it will be set and all
+  /// If the trait has not been set in descriptor it will be set and all
   /// conflicted traits will be unset.
   /// \note This class manages memory allocation to store description of traits.
   template<class Trait> void set(Trait *T) {
@@ -714,7 +714,7 @@ struct StaticTraitMapKey {
 /// \tparam Ty Type of values stored in the map.
 /// \tparam TraitDescriptor Set of available traits (see TraitDescriptor<...>).
 template<class Ty, class TraitDescriptor> class StaticTraitMap {
-  friend class json::Traits<StaticTraitMap>;
+  friend struct json::Traits<StaticTraitMap>;
 
   /// Wrapper which constructs a key in map for a specified trait.
   template<class Trait>
@@ -844,6 +844,9 @@ private:
 /// `insert(Coll &, Element &)` where Element is equal to TraitSet * and Coll is
 /// a type of any cell in TraitMap.
 ///
+/// Note that descriptor of traits (bcl::TraitDescriptor) can be also evaluated
+/// instead of full set of traits (bcl::TraitSet).
+///
 /// Usage: `TraitSet Set; TraitMap Map; Set.for_each(Constructor(Set, Map))`.
 template<class TraitSet, class TraitMap,
   template<class Coll, class Element> class Inserter = PushBackInserter>
@@ -855,7 +858,8 @@ public:
   /// Stores representation of a trait in a static map.
   template<class Trait> void operator()() {
     Inserter<
-      typename std::remove_reference<decltype(mMap->template value<Trait>())>::type,
+      typename std::remove_reference<
+        decltype(mMap->template value<Trait>())>::type,
       TraitSet *>::insert(mMap->template value<Trait>(), mTS);
   }
 
