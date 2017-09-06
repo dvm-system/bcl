@@ -176,6 +176,16 @@ template<class... Args> inline constexpr std::size_t size_of() {
   return detail::SizeOfImp<Args...>::size_of();
 }
 
+/// Applies a specified function to each value in the empty pack (this is stub).
+template<class Function> inline void staticForeach(Function &&F) {}
+
+/// Applies a specified function to each value in the pack.
+template<class FirstTy, class... TailTy, class Function>
+inline void staticForeach(Function &&F, FirstTy First, TailTy... Tail) {
+  F(First);
+  staticForeach(std::forward<Function>(F), Tail...);
+}
+
 /// Provides method to insert an element (Element) in a collection (Coll) which
 /// supports push_back(Element &) method.
 template<class Coll, class Element> struct PushBackInserter {
