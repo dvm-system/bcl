@@ -109,7 +109,7 @@ private:
 
 private:
   template<class Ty, class Tag> friend struct ChainTraits;
-  template<class Ty, class Tag> friend struct ChainIterator;
+  template<class Ty, class Tag> friend class ChainIterator;
 
   Chain *mPrev = nullptr;
   Chain *mNext = nullptr;

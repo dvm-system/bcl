@@ -171,7 +171,7 @@ template<class Ty, class... Args> inline constexpr std::size_t index_of() {
   return detail::IndexOfImp<Ty, Args...>::index_of();
 }
 
-/// Returns number of types the list of types Args.
+/// Returns number of types in the list of types Args.
 template<class... Args> inline constexpr std::size_t size_of() {
   return detail::SizeOfImp<Args...>::size_of();
 }
