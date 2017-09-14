@@ -188,15 +188,30 @@ inline void staticForeach(Function &&F, FirstTy First, TailTy... Tail) {
 }
 
 /// Provides method to insert an element (Element) in a collection (Coll) which
+/// support insert(Element &) method.
+template<class Element, class Coll> struct SimpleInserter {
+  inline static void insert(
+    typename std::conditional<
+      std::is_pointer<Element>::value, Element, Element &>::type E,
+    Coll &C) { C.insert(E); }
+};
+
+/// Provides method to insert an element (Element) in a collection (Coll) which
 /// supports push_back(Element &) method.
-template<class Coll, class Element> struct PushBackInserter {
-  inline static void insert(Coll &C, Element &E) { C.push_back(E); }
+template<class Element, class Coll> struct PushBackInserter {
+  inline static void insert(
+    typename std::conditional<
+      std::is_pointer<Element>::value, Element, Element &>::type E,
+    Coll &C) { C.push_back(E); }
 };
 
 /// Provides method to count the number of inserted elements. Counter of type Ty
 /// should support operator++() method.
-template<class Ty, class Element> struct CountInserter {
-  inline static void insert(Ty &C, Element &) { ++C; }
+template<class Element , class Ty> struct CountInserter {
+  inline static void insert(
+    typename std::conditional<
+      std::is_pointer<Element>::value, Element, Element &>::type E,
+    Ty &C) { ++C; }
 };
 
 /// Return true if this character is non-new-line whitespace:

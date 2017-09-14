@@ -849,7 +849,7 @@ private:
 ///
 /// Usage: `TraitSet Set; TraitMap Map; Set.for_each(Constructor(Set, Map))`.
 template<class TraitSet, class TraitMap,
-  template<class Coll, class Element> class Inserter = PushBackInserter>
+  template<class Element, class Coll> class Inserter = PushBackInserter>
 class TraitMapConstructor {
 public:
   /// Creates the functor.
@@ -857,10 +857,10 @@ public:
 
   /// Stores representation of a trait in a static map.
   template<class Trait> void operator()() {
-    Inserter<
+    Inserter<TraitSet *,
       typename std::remove_reference<
-        decltype(mMap->template value<Trait>())>::type,
-      TraitSet *>::insert(mMap->template value<Trait>(), mTS);
+        decltype(mMap->template value<Trait>())>::type>
+    ::insert(mTS, mMap->template value<Trait>());
   }
 
   /// Returns a static trait map.
