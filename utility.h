@@ -13,6 +13,7 @@
 #define UTILITY_H
 
 #include <type_traits>
+#include <memory>
 
 /// \brief This can be used to set list of parameters as single parameter
 /// of a macro.
