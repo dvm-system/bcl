@@ -108,8 +108,8 @@ private:
   const Ty * getPrev() const noexcept { return static_cast<const Ty *>(mPrev); }
 
 private:
-  template<class Ty, class Tag> friend struct ChainTraits;
-  template<class Ty, class Tag> friend class ChainIterator;
+  template<class, class> friend struct ChainTraits;
+  template<class, class> friend struct ChainIterator;
 
   Chain *mPrev = nullptr;
   Chain *mNext = nullptr;
@@ -195,6 +195,8 @@ template<class Ty, class Tag = void> class ChainIteratorC :
   static_assert(std::is_base_of<Chain<Ty, Tag>, Ty>::value,
     "Each node in a chain must inherit chain implementation!");
 public:
+  using value_type = typename std::iterator<std::bidirectional_iterator_tag, const Ty>::value_type;
+
   /// Implicitly create an iterator, which starts at a specified node.
   ChainIteratorC(const Chain<Ty, Tag> *C) noexcept : mCurrent(C) {}
 
@@ -238,7 +240,7 @@ public:
 
   /// Preincrement, this node must not be null.
   ChainIteratorC & operator++()
-      noexcept(noexcept(ChainTraits<Ty, Tag>::getNext(mCurrent))) {
+      noexcept(noexcept(ChainTraits<Ty, Tag>::getNext())) {
     assert(mCurrent && "Advancing null node!");
     mCurrent = ChainTraits<Ty, Tag>::getNext(mCurrent);
     return *this;
@@ -252,7 +254,7 @@ public:
 
   /// Predecrement, this node must not be null.
   ChainIteratorC & operator--()
-      noexcept(noexcept(ChainTraits<Ty, Tag>::getPrev(mCurrent))) {
+      noexcept(noexcept(ChainTraits<Ty, Tag>::getPrev())) {
     assert(mCurrent && "Decreasing null node!!");
     mCurrent = ChainTraits<Ty, Tag>::getPrev(mCurrent);
     return *this;
@@ -269,13 +271,13 @@ public:
 
   /// Returns a next node.
   const Ty * getNext() const
-      noexcept(noexcept(ChainTraits<Ty, Tag>::getNext(mCurrent))) {
+      noexcept(noexcept(ChainTraits<Ty, Tag>::getNext())) {
     return ChainTraits<Ty, Tag>::getNext(mCurrent);
   }
 
   /// Returns a previous node.
   const Ty * getPrev() const
-      noexcept(noexcept(ChainTraits<Ty, Tag>::getPrev(mCurrent))) {
+      noexcept(noexcept(ChainTraits<Ty, Tag>::getPrev())) {
     return ChainTraits<Ty, Tag>::getPrev(mCurrent);
   }
 
