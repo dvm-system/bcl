@@ -624,7 +624,7 @@ public:
   /// This is a utility method which is used to parse JSON string. It should be
   /// used to add support for additional value conversions.
   /// \tparam CT This is specialization of CellTraits or Traits
-  /// templates. For each pair of keys and values the method AT::parse() will be
+  /// templates. For each pair of keys and values the method CT::parse() will be
   /// called.
   /// \tparam Ty This is a type of JSON object where the converted values
   /// must be stored.
@@ -644,9 +644,14 @@ public:
     else
       return false;
     Position Count = 0;
+    if (!Lex.goToNext())
+      return false;
+    // It may be empty container, so it is checked here.
+    // This is not the end of string so do not check that
+    // mLex.next() >= mLex.json().size().
+    if (Lex.is(Last))
+      return true;
     for (;;) {
-      if (!Lex.goToNext())
-        return false;
       std::pair<Position, Position> Key(0, Count++);
       if (Last == Token::RIGHT_BRACE) {
         if (!Lex.checkIdentifier())
@@ -669,6 +674,8 @@ public:
         return true;
       if (!Lex.checkSpecial(Token::COMMA))
         return false;
+      if (!Lex.goToNext())
+        return false;
     }
   }
 
@@ -677,9 +684,10 @@ public:
   /// This is a utility method.
   /// Array is represented using the following JSON strings:
   /// {"0":V0, ..., "N":VN} or [V0, ..., VN].
-  /// \returns At first, the maximum index occurred in array representation,
-  /// secondly a number of indexes and the last one value identifies
-  /// whether some errors have been occurred.
+  /// \returns At first, a number of indexes secondly the maximum index occurred
+  /// in array representation and the last one value identifies whether some
+  /// errors have been occurred (false if any error has been occurred).
+  /// For empty arrays the second value in the tuple id undefined.
   static std::tuple<Position, Position, bool> numberOfKeys(Lexer &Lex);
 
   /// \brief Unparses a specified JSON object to a JSON string.
@@ -985,14 +993,30 @@ template<> struct Traits<double> {
 template<> struct Traits<char *> {
   inline static bool parse(char *&Dest, Lexer &Lex) {
     char *TmpDest = nullptr;
-    if (Lex.is(Token::LEFT_BRACE) || Lex.is(Token::RIGHT_BRACE)) {
+    if (Lex.is(Token::LEFT_BRACE) || Lex.is(Token::LEFT_BRACKET)) {
       try {
         Position MaxIdx, Count;
-        bool Error;
-        std::tie(Count, MaxIdx, Error) = Parser<>::numberOfKeys(Lex);
-        if (Error)
+        bool Ok;
+        std::tie(Count, MaxIdx, Ok) = Parser<>::numberOfKeys(Lex);
+        if (!Ok)
           return false;
-        TmpDest = new char[MaxIdx + 1];
+        if (Count != 0) {
+          if (Count < MaxIdx + 1) {
+            /// User of JSON serializer can not determine if there is some
+            /// uninitialized elements in an array without manual parsing of
+            /// a JSON string. So do not parse such arrays. This array
+            /// should be parsed as a map.
+            Lex.errors().insert(JSON_ERROR(7), Lex.start());
+            throw 0;
+          } else if (Count > MaxIdx + 1) {
+            Lex.errors().insert(JSON_ERROR(8), Lex.start());
+
+            throw 0;
+          }
+          TmpDest = new char[MaxIdx + 1];
+        }
+        // Note, in case of empty array traverse also should be called to move
+        // lexer position to the end of this array.
         if (!Parser<>::traverse<Traits<char *>>(TmpDest, Lex))
           throw 0;
       }
@@ -1023,7 +1047,7 @@ template<> struct Traits<char *> {
       // This also implies that Dest[Idx] can not produce out of range exception.
       auto Idx = std::stoull(
         Lex.json().substr(Key.first + 1, Key.second - Key.first - 1));
-    return Traits<char>::parse(Dest[Idx], Lex);
+      return Traits<char>::parse(Dest[Idx], Lex);
     } else {
       return Traits<char>::parse(Dest[Key.second], Lex);
     }
@@ -1046,22 +1070,27 @@ template<class Ty> struct Traits<Ty *> {
     if (Lex.is(Token::LEFT_BRACE) || Lex.is(Token::LEFT_BRACKET)) {
       try {
         Position MaxIdx, Count;
-        bool Error;
-        std::tie(Count, MaxIdx, Error) = Parser<>::numberOfKeys(Lex);
-        if (Error)
+        bool Ok;
+        std::tie(Count, MaxIdx, Ok) = Parser<>::numberOfKeys(Lex);
+        if (!Ok)
           return false;
-        if (Count < MaxIdx + 1) {
-          /// User of JSON serializer can not determine if there is some
-          /// uninitialized elements in an array without manual parsing of
-          /// a JSON string. So do not parse such arrays. This array
-          /// should be parsed as a map.
-          Lex.errors().insert(JSON_ERROR(7), Lex.start());
-          throw 0;
-        } else if (Count > MaxIdx + 1) {
-          Lex.errors().insert(JSON_ERROR(8), Lex.start());
-          throw 0;
+        if (Count != 0) {
+          if (Count < MaxIdx + 1) {
+            /// User of JSON serializer can not determine if there is some
+            /// uninitialized elements in an array without manual parsing of
+            /// a JSON string. So do not parse such arrays. This array
+            /// should be parsed as a map.
+            Lex.errors().insert(JSON_ERROR(7), Lex.start());
+            throw 0;
+          } else if (Count > MaxIdx + 1) {
+            Lex.errors().insert(JSON_ERROR(8), Lex.start());
+
+            throw 0;
+          }
+          TmpDest = new Ty[MaxIdx + 1];
         }
-        TmpDest = new Ty[MaxIdx + 1];
+        // Note, in case of empty array traverse also should be called to move
+        // lexer position to the end of this array.
         if (!Parser<>::traverse<Traits<Ty *>>(TmpDest, Lex))
           throw 0;
       }
@@ -1121,22 +1150,26 @@ template<class Ty, class Allocator>
 struct Traits<std::vector<Ty, Allocator>> {
   inline static bool parse(std::vector<Ty, Allocator> &Dest, Lexer &Lex) {
     Position MaxIdx, Count;
-    bool Error;
-    std::tie(Count, MaxIdx, Error) = Parser<>::numberOfKeys(Lex);
-    if (Error)
+    bool Ok;
+    std::tie(Count, MaxIdx, Ok) = Parser<>::numberOfKeys(Lex);
+    if (!Ok)
       return false;
-    if (Count < MaxIdx + 1) {
-      /// User of JSON serializer can not determine if there is some
-      /// uninitialized elements in an array without manual parsing of
-      /// a JSON string. So do not parse such arrays. This array
-      /// should be parsed as a map.
-      Lex.errors().insert(JSON_ERROR(7), Lex.start());
-      return false;
-    } else if (Count > MaxIdx + 1) {
-      Lex.errors().insert(JSON_ERROR(8), Lex.start());
-      return false;
+    if (Count != 0) {
+      if (Count < MaxIdx + 1) {
+        /// User of JSON serializer can not determine if there is some
+        /// uninitialized elements in an array without manual parsing of
+        /// a JSON string. So do not parse such arrays. This array
+        /// should be parsed as a map.
+        Lex.errors().insert(JSON_ERROR(7), Lex.start());
+        return false;
+      } else if (Count > MaxIdx + 1) {
+        Lex.errors().insert(JSON_ERROR(8), Lex.start());
+        return false;
+      }
     }
     Dest.resize(Count);
+    // Note, in case of empty array traverse also should be called to move
+    // lexer position to the end of this array.
     return Parser<>::
       traverse<Traits<std::vector<Ty, Allocator>>>(Dest, Lex);
   }
@@ -1397,16 +1430,20 @@ Parser<Objects...>::numberOfKeys(Lexer &Lex) {
   Position MaxIdx = 0;
   Position Count = 0;
   Token Last;
-  if (Lex.checkSpecial(Token::LEFT_BRACKET))
+  if (Lex.is(Token::LEFT_BRACKET))
     Last = Token::RIGHT_BRACKET;
   else if (Lex.checkSpecial(Token::LEFT_BRACE))
     Last = Token::RIGHT_BRACE;
   else
     return std::make_tuple(0, 0, false);
+  if (!Lex.goToNext())
+    return std::make_tuple(0, 0, false);
+  if (Lex.is(Last)) {
+    Lex.restorePosition();
+    return std::make_tuple(0, 0, true);
+  }
   for (;;) {
     ++Count;
-    if (!Lex.goToNext())
-      return std::make_tuple(0, 0, false);
     if (Last == Token::RIGHT_BRACE) {
       if (!Lex.checkIdentifier())
         return std::make_tuple(0, 0, false);
@@ -1430,10 +1467,12 @@ Parser<Objects...>::numberOfKeys(Lexer &Lex) {
       break;
     if (!Lex.checkSpecial(Token::COMMA))
       return std::make_tuple(0, 0, false);
+    if (!Lex.goToNext())
+      return std::make_tuple(0, 0, false);
   }
   Lex.restorePosition();
   return std::make_tuple(
-    Count, Last == Token::RIGHT_BRACE ? MaxIdx : Count - 1, false);
+    Count, Last == Token::RIGHT_BRACE ? MaxIdx : Count - 1, true);
 }
 
 template<> struct Traits<bcl::Diagnostic> {
