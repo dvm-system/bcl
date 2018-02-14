@@ -47,6 +47,10 @@ private:
   void spliceNext(Chain *N) noexcept {
     assert(N != this && "A node must not follow itself!");
     if (N) {
+      if (N->mNext)
+        N->mNext->mPrev = nullptr;
+      if (N->mPrev)
+        N->mPrev->mNext = nullptr;
       N->mNext = mNext;
       N->mPrev = this;
     }
@@ -61,8 +65,11 @@ private:
   /// merged to this node.
   void mergeNext(Chain *N) noexcept {
     assert(N != this && "A node must not follow itself!");
-    if (N)
+    if (N) {
+      if (N->mPrev)
+        N->mPrev->mNext = nullptr;
       N->mPrev = this;
+    }
     if (mNext)
       mNext->mPrev = nullptr;
     mNext = N;
@@ -74,6 +81,10 @@ private:
   void splicePrev(Chain *N) noexcept {
     assert(N != this && "A node must not precede itself!");
     if (N) {
+      if (N->mNext)
+        N->mNext->mPrev = nullptr;
+      if (N->mPrev)
+        N->mPrev->mNext = nullptr;
       N->mPrev = mPrev;
       N->mNext = this;
     }
@@ -88,8 +99,11 @@ private:
   /// merged to this node.
   void mergePrev(Chain *N) noexcept {
     assert(N != this && "A node must not precede itself!");
-    if (N)
+    if (N) {
+      if (N->mNext)
+        N->mNext->mPrev = nullptr;
       N->mNext = this;
+    }
     if (mPrev)
       mPrev->mNext = nullptr;
     mPrev = N;
