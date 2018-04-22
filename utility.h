@@ -99,6 +99,12 @@ inline constexpr T unitMask(std::size_t Digits) {
     static_cast<T>(1) << (Digits - 1) | unitMask<T>(Digits - 1);
 }
 
+/// Prints the bit representation of a specified value to a specified stream.
+template<class T, class Stream> void  bitPrint(T V, Stream &OS) {
+  for (int BitIdx = sizeof(T) * CHAR_BIT - 1; BitIdx >= 0; --BitIdx)
+    OS << ((V >> BitIdx) & 1);
+}
+
 /// This prevents assignment of the derived classes.
 class Unassignable {
 protected:
