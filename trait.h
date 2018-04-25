@@ -310,7 +310,7 @@ struct ForEachIfSet<Function, Descriptor, Trait> {
   static void exec(const Descriptor &TD, Function F) {
     if (!TD.template is<Trait>())
       return;
-#ifdef __GNUC__
+#if defined __GNUC__ || defined __clang__ || defined _MSC_VER && _MSC_VER >= 1911
     F.template operator()<Trait>();
 #else
     F.operator()<Trait> ();
@@ -447,7 +447,7 @@ public:
 
   /// Set traits and unset all conflicted traits.
   template<class... Traits> void set() {
-    auto constexpr ConflictMasks = ~joinConflict<Traits...>();;
+    auto constexpr ConflictMasks = ~joinConflict<Traits...>();
     auto constexpr Keys = joinKey<Traits...>() & ConflictMasks;
     mTD = (mTD & ConflictMasks) | Keys;
   }
@@ -542,6 +542,14 @@ public:
     OS << std::bitset<sizeof(TraitKey) * CHAR_BIT>(Masks).to_string();
   }
 
+  virtual ~TraitDescriptor() = default;
+  TraitDescriptor() = default;
+  TraitDescriptor(const TraitDescriptor &) = default;
+  TraitDescriptor(TraitDescriptor &&) = default;
+  TraitDescriptor & operator=(const TraitDescriptor &) = default;
+  TraitDescriptor & operator=(TraitDescriptor &&) = default;
+
+private:
   TraitKey mTD = 0;
 };
 
@@ -553,15 +561,6 @@ template<class... Groups> struct TraitList<TraitDescriptor<Groups...>> {
   typedef typename TraitList<Groups...>::Type Type;
 };
 
-namespace trait {
-/// \brief Checks whether two traits (LHS and RHS) can be set simultaneously.
-///
-/// This is a specialization for a TraitDescriptor<...> class.
-template<class LHS, class RHS, class... Groups>
-struct is_conflict<LHS, RHS, TraitDescriptor<Groups...>> :
-  public is_conflict<LHS, RHS, Groups...>::type {};
-}
-
 /// \brief This represents set of traits.
 ///
 /// In addition to a trait descriptor which propose information whether a trait
@@ -571,7 +570,6 @@ struct is_conflict<LHS, RHS, TraitDescriptor<Groups...>> :
 /// description of each trait.
 template<class TraitDescriptor, class TraitMap>
 class TraitSet {
-  template<class NewTrait>
   struct ConflictsResolver {
     ConflictsResolver(TraitMap *Values) : mValues(Values) {
       assert(mValues && "Map of trait descriptions must not be null!");
@@ -593,11 +591,45 @@ class TraitSet {
   };
 
 public:
+  TraitSet() = default;
+  TraitSet(const TraitSet &) = default;
+  TraitSet(TraitSet &&) = default;
+  TraitSet & operator=(const TraitSet &) = default;
+  TraitSet & operator=(TraitSet &&) = default;
+
   /// Creates set of traits.
   TraitSet(const TraitDescriptor &TD) : mTD(TD) {}
 
   /// Creates set of traits.
   TraitSet(TraitDescriptor &&TD) : mTD(std::move(TD)) {}
+
+  /// Assigns descriptor to this set of traits.
+  TraitSet & operator=(const TraitDescriptor &TD) {
+    if (!mValues.empty())
+      mTD.for_each(ConflictsResolver(&mValues));
+    mTD = TD;
+    return *this;
+  }
+
+  /// Assigns descriptor to this set of traits.
+  TraitSet & operator=(TraitDescriptor &&TD) {
+    if (!mValues.empty())
+      mTD.for_each(ConflictsResolver(&mValues));
+    mTD = std::move(TD);
+    return *this
+  }
+
+  /// Destroys information about all traits.
+  virtual ~TraitSet() {
+    if (!mValues.empty())
+      mTD.for_each(ConflictsResolver(&mValues));
+  }
+
+  /// Implicitly converts this set to a descriptor.
+  operator TraitDescriptor () const noexcept { return mTD; }
+
+  /// Returns underlying descriptor.
+  TraitDescriptor get() const noexcept { return mTD; }
 
   /// Checks whether a trait is set.
   template<class... Traits> bool is() const {
@@ -640,6 +672,34 @@ public:
     TraitDescriptor::for_each_available(std::forward<Function>(F));
   }
 
+  /// \brief Set all specified traits if they have not been set yet.
+  ///
+  /// If there are values associated with these traits they will not be changed.
+  template<class... Traits> void set() {
+    mTD.set<Traits...>();
+  }
+
+  /// Unset all specified traits.
+  template<class Trait> void unset() {
+    auto constexpr Key = mTD.template getKey<Trait>();
+    auto I = mValues.find(Key);
+    if (I != mValues.end() || I->second)
+      delete reinterpret_cast<Trait*>(I->second);
+    mTD.unset<Trait>();
+  }
+
+  /// Unset all specified traits.
+  template<class First, class Second, class... Traits> void unset() {
+    unset<First>();
+    unsert<Second, Traits...>();
+  }
+
+  void unset_all() {
+    if (!mValues.empty())
+      mTD.template for_each(ConflictsResolver(&mValues));
+    mTD.unset_all();
+  }
+
   /// \brief Add description of a specified trait.
   ///
   /// If the trait has not been set in descriptor it will be set and all
@@ -655,7 +715,7 @@ public:
       return;
     }
     if (!mValues.empty())
-      mTD.template for_each_conflict<Trait>(ConflictsResolver<Trait>(&mValues));
+      mTD.template for_each_conflict<Trait>(ConflictsResolver(&mValues));
     mTD.template set<Trait>();
     mValues.insert(
       std::make_pair(mTD.template getKey<Trait>(), reinterpret_cast<void *>(T)));
@@ -697,6 +757,124 @@ private:
   TraitMap mValues;
   TraitDescriptor mTD;
 };
+
+namespace trait {
+/// \brief Checks whether two traits (LHS and RHS) can be set simultaneously.
+///
+/// This is a specialization for a TraitDescriptor<...> class.
+template<class LHS, class RHS, class... Groups>
+struct is_conflict<LHS, RHS, TraitDescriptor<Groups...>> :
+  public is_conflict<LHS, RHS, Groups...>::type {};
+
+/// \brief Checks whether two traits (LHS and RHS) can be set simultaneously.
+///
+/// This is a specialization for a TraitSet<...> class.
+template<class LHS, class RHS, class TraitMap, class... Groups>
+struct is_conflict<LHS, RHS, TraitSet<TraitDescriptor<Groups...>, TraitMap>> :
+  public is_conflict<LHS, RHS, Groups...>::type {};
+
+/// \brief Finds group of traits which contains a specified trait.
+///
+/// This is a specialization for a TraitDescriptor<...> class.
+template<class Trait, class... Groups>
+struct find_group<Trait, TraitDescriptor<Groups...>> :
+  public find_group<Trait, Groups...> {};
+
+/// \brief Finds group of traits which contains a specified trait.
+///
+/// This is a specialization for a TraitSet<...> class.
+template<class Trait, class TraitMap, class... Groups>
+struct find_group<Trait, TraitSet<TraitDescriptor<Groups...>, TraitMap>> :
+  public find_group<Trait, Groups...> {};
+
+/// \brief Checks if a trait is contained in a group of traits.
+///
+/// This is a specialization for a TraitDescriptor<...> class.
+template<class Trait, class... Groups>
+struct is_contained<Trait, TraitDescriptor<Groups...>> :
+  public is_contained<Trait, Groups...> {};
+
+/// \brief Checks if a trait is contained in a group of traits.
+///
+/// This is a specialization for a TraitSet<...> class.
+template<class Trait, class TraitMap, class... Groups>
+struct is_contained<Trait, TraitSet<TraitDescriptor<Groups...>, TraitMap>> :
+  public is_contained<Trait, Groups...> {};
+
+namespace detail {
+template<class Descriptor, class... WhatTy> struct UnsetFunctor {
+  static void unset(Descriptor &Dptr) { Dptr.template unset<WhatTy...>(); }
+};
+
+template<class Descriptor, class... Groups>
+struct UnsetFunctor<Descriptor, bcl::TraitDescriptor<Groups...>> {
+  static void unset(Descriptor &Dptr) { Dptr.template unset<Groups...>(); }
+};
+
+template<class Descriptor, class TraitMap, class... Groups>
+struct UnsetFunctor<
+    Descriptor, bcl::TraitSet<bcl::TraitDescriptor<Groups...>, TraitMap>> {
+  static void unset(Descriptor &Dptr) { Dptr.template unset<Groups...>(); }
+};
+
+template<class Descriptor, class... WhatTy> struct SetFunctor {
+  static void set(Descriptor &Dptr) { Dptr.template set<WhatTy...>(); }
+};
+
+template<class Descriptor, class... Groups>
+struct SetFunctor<Descriptor, bcl::TraitDescriptor<Groups...>> {
+  static void set(Descriptor &Dptr) { Dptr.template set<Groups...>(); }
+};
+
+template<class Descriptor, class TraitMap, class... Groups>
+struct SetFunctor<
+    Descriptor, bcl::TraitSet<bcl::TraitDescriptor<Groups...>, TraitMap>> {
+  static void set(Descriptor &Dptr) { Dptr.template unset<Groups...>(); }
+};
+
+template<class WhereTy> struct SetTraitFunctor {
+  template<class Trait> void operator()() {
+    set<Trait>(bcl::trait::is_contained<Trait, WhereTy>());
+  }
+  template<class Trait> void set(std::true_type) {
+    mWhere->template set<Trait>();
+  }
+  template<class Trait> void set(std::false_type) {}
+  WhereTy *mWhere;
+};
+}
+
+/// Unsets list of traits. This list can be also specified as
+/// bcl::TraitDescriptor or bcl::TraitSet.
+template<class FirstWhatTy, class... WhatTy, class Descriptor>
+inline void unset(Descriptor &Dptr) {
+  detail::UnsetFunctor<Descriptor, FirstWhatTy, WhatTy...>::unset(Dptr);
+}
+
+/// Unsets list of traits. This list can be also specified as
+/// bcl::TraitDescriptor or bcl::TraitSet.
+template<class FirstWhatTy, class... WhatTy, class Descriptor>
+inline void set(Descriptor &Dptr) {
+  detail::SetFunctor<Descriptor, FirstWhatTy, WhatTy...>::set(Dptr);
+}
+
+/// Sets in `Where` all traits that are set in `What`. Both parameters may be
+/// bcl::TraitDescriptor or bcl::TraitSet.
+template<class WhatTy, class... Traits>
+void set(const WhatTy &What, TraitDescriptor<Traits...> &Where) {
+  detail::SetTraitFunctor<TraitDescriptor<Traits...>> Functor{ &Where };
+  What.for_each(Functor);
+}
+/// Sets in `Where` all traits that are set in `What`. Both parameters may be
+/// bcl::TraitDescriptor or bcl::TraitSet.
+template<class WhatTy, class TraitMap, class... Traits>
+void set(const WhatTy &What,
+    TraitSet<TraitDescriptor<Traits...>, TraitMap> &Where) {
+  detail::SetTraitFunctor<
+    TraitSet<TraitDescriptor<Traits...>, TraitMap>> Functor{ &Where };
+  What.for_each(Functor);
+}
+}
 
 namespace detail {
 /// Wrapper which constructs a key in map for a specified trait.
@@ -740,7 +918,7 @@ template<class Ty, class TraitDescriptor> class StaticTraitMap {
       typedef typename CellTy::CellKey CellKey;
       typedef typename CellTy::ValueType ValueType;
       typedef typename CellKey::TraitType TraitType;
-#ifdef __GNUC__
+#if defined __GNUC__ || defined __clang__ || defined _MSC_VER && _MSC_VER >= 1911
       mFunction.template operator()<TraitType>(C->template value<CellKey>());
 #else
       mFunction.operator()<TraitType>(C->template value<CellKey>());
