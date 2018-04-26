@@ -22,25 +22,24 @@ namespace bcl {
 /// a reference to each of the elements.
 template<class FirstTy, class SecondTy>
 struct convertible_pair : public std::pair<FirstTy, SecondTy> {
+  using PairTy = std::pair<FirstTy, SecondTy>;
   template<class... ArgsTy,
     class = typename std::enable_if<
-      std::is_constructible<
-        std::pair<FirstTy, SecondTy>, ArgsTy&&...>::value>::type>
+      std::is_constructible<PairTy, ArgsTy&&...>::value>::type>
   constexpr convertible_pair(ArgsTy&&... Args) :
-    std::pair<FirstTy, SecondTy>(std::forward<ArgsTy>(Args)...) {}
+    PairTy(std::forward<ArgsTy>(Args)...) {}
   template<class ArgTy,
     class = typename std::enable_if<
-      std::is_constructible<
-        std::pair<FirstTy, SecondTy>, ArgTy &&>::value>::type>
-  convertible_pair & operator=(ArgTy&& Arg) noexcept(noexcept(
-    std::pair<FirstTy, SecondTy>::operator=(std::forward<ArgTy>(Arg)))) {
+      std::is_constructible<PairTy, ArgTy &&>::value>::type>
+  convertible_pair & operator=(ArgTy&& Arg)
+      noexcept(noexcept(PairTy::operator=)) {
     return static_cast<convertible_pair &>(
-        std::pair<FirstTy, SecondTy>::operator=(std::forward<ArgTy>(Arg)));
+        PairTy::operator=(std::forward<ArgTy>(Arg)));
   }
-  operator FirstTy & () noexcept { return first; }
-  operator SecondTy & () noexcept { return second; }
-  operator const FirstTy & () const noexcept { return first; }
-  operator const SecondTy & () const noexcept { return second; }
+  operator FirstTy & () noexcept { return PairTy::first; }
+  operator SecondTy & () noexcept { return PairTy::second; }
+  operator const FirstTy & () const noexcept { return PairTy::first; }
+  operator const SecondTy & () const noexcept { return PairTy::second; }
 };
 }
 #endif//BCL_CONVERTIBLE_PAIR_H
