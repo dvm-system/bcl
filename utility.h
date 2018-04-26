@@ -12,6 +12,7 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
+#include <climits>
 #include <type_traits>
 #include <memory>
 

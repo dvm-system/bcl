@@ -616,7 +616,7 @@ public:
     if (!mValues.empty())
       mTD.for_each(ConflictsResolver(&mValues));
     mTD = std::move(TD);
-    return *this
+    return *this;
   }
 
   /// Destroys information about all traits.
@@ -691,7 +691,7 @@ public:
   /// Unset all specified traits.
   template<class First, class Second, class... Traits> void unset() {
     unset<First>();
-    unsert<Second, Traits...>();
+    unset<Second, Traits...>();
   }
 
   void unset_all() {
