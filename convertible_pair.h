@@ -32,7 +32,11 @@ struct convertible_pair : public std::pair<FirstTy, SecondTy> {
     class = typename std::enable_if<
       std::is_constructible<PairTy, ArgTy &&>::value>::type>
   convertible_pair & operator=(ArgTy&& Arg)
+#if defined __GNUC__ || defined __clang__
       noexcept(noexcept(PairTy::operator=)) {
+#else
+      noexcept(noexcept(PairTy::operator=(std::forward<ArgTy>(Arg)))) {
+#endif
     return static_cast<convertible_pair &>(
         PairTy::operator=(std::forward<ArgTy>(Arg)));
   }
