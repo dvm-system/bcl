@@ -115,6 +115,23 @@ template<class TagTy, class... Taggeds>
 struct get<TagTy, TypeList<Taggeds...>> {
   typedef typename get<TagTy, Taggeds...>::type type;
 };
+
+namespace detail {
+template<class Tagged> struct type_or_void {
+  using type = typename Tagged::type;
+};
+template<> struct type_or_void<void> { using type = void; };
+
+template<class Tagged> struct tag_or_void {
+  using tag = typename Tagged::tag;
+};
+template<> struct tag_or_void<void> { using tag = void; };
+
+template<class Tagged> struct alias_or_void {
+  using alias = typename Tagged::alias;
+};
+template<> struct alias_or_void<void> { using alias = void; };
+}
 }
 
 /// Type alias to access a tagged type.
@@ -151,17 +168,18 @@ using get_tagged = typename tags::get<TagTy, Taggeds...>::type;
 
 /// Type alias to access result of search an appropriate bcl::tagged structure.
 template<class TagTy, class... Taggeds>
-using get_tagged_t = typename get_tagged<TagTy, Taggeds...>::type;
-
-
-/// Type alias to access result of search an appropriate bcl::tagged structure.
-template<class TagTy, class... Taggeds>
-using get_tagged_tag = typename get_tagged<TagTy, Taggeds...>::tag;
-
+using get_tagged_t = typename tags::detail::type_or_void<
+  get_tagged<TagTy, Taggeds...>>::type;
 
 /// Type alias to access result of search an appropriate bcl::tagged structure.
 template<class TagTy, class... Taggeds>
-using get_tagged_alias = typename get_tagged<TagTy, Taggeds...>::alias;
+using get_tagged_tag = typename tags::detail::tag_or_void<
+  get_tagged<TagTy, Taggeds...>>::tag;
+
+/// Type alias to access result of search an appropriate bcl::tagged structure.
+template<class TagTy, class... Taggeds>
+using get_tagged_alias = typename tags::detail::alias_or_void<
+  get_tagged<TagTy, Taggeds...>>::alias;
 
 /// This is equivalent to std::pair but also it provides way to access first and
 /// second value via tag of a type (Pair.get<Tag>()).
