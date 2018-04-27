@@ -20,6 +20,7 @@
 #include "cell.h"
 #include "utility.h"
 #include "Json.h"
+#include "tagged.h"
 
 namespace bcl {
 /// This type represents a key of a trait.
@@ -568,8 +569,19 @@ template<class... Groups> struct TraitList<TraitDescriptor<Groups...>> {
 /// \tparam TraitDescriptor Descriptor of traits.
 /// \tparam TraitMap A map from TraitKey to void * which is used to store
 /// description of each trait.
-template<class TraitDescriptor, class TraitMap>
+/// \tparam TraitTaggeds List of bcl::taggeds which establish correspondence
+/// between trait and type of its description. By default, type of a trait
+/// description is equal to this trait. A description is used to store
+/// additional information about the related trait.
+template<class TraitDescriptor, class TraitMap,
+  class TraitTaggeds = TypeList<>>
 class TraitSet {
+  /// Type of description of a specified trait.
+  template<class Trait>
+  using TraitDataTy = typename std::conditional<
+    std::is_same<void, bcl::get_tagged<Trait, TraitTaggeds>>::value,
+      Trait, get_tagged_t<Trait, TraitTaggeds>>::type;
+
   struct ConflictsResolver {
     ConflictsResolver(TraitMap *Values) : mValues(Values) {
       assert(mValues && "Map of trait descriptions must not be null!");
@@ -581,7 +593,7 @@ class TraitSet {
       auto I = mValues->find(Key);
       if (I != mValues->end()) {
         if (I->second)
-          delete reinterpret_cast<Trait*>(I->second);
+          delete reinterpret_cast<TraitDataTy<Trait>*>(I->second);
         mValues->erase(I);
       }
     }
@@ -684,7 +696,7 @@ public:
     auto constexpr Key = mTD.template getKey<Trait>();
     auto I = mValues.find(Key);
     if (I != mValues.end() || I->second)
-      delete reinterpret_cast<Trait*>(I->second);
+      delete reinterpret_cast<TraitDataTy<Trait>*>(I->second);
     mTD.unset<Trait>();
   }
 
@@ -705,12 +717,12 @@ public:
   /// If the trait has not been set in descriptor it will be set and all
   /// conflicted traits will be unset.
   /// \note This class manages memory allocation to store description of traits.
-  template<class Trait> void set(Trait *T) {
+  template<class Trait> void set(TraitDataTy<Trait> *T) {
     auto constexpr Key = mTD.template getKey<Trait>();
     auto I = mValues.find(Key);
     if (I != mValues.end()) {
       if (I->second)
-        delete reinterpret_cast<Trait*>(I->second);
+        delete reinterpret_cast<TraitDataTy<Trait>*>(I->second);
       I->second = reinterpret_cast<void *>(T);
       return;
     }
@@ -718,7 +730,7 @@ public:
       mTD.template for_each_conflict<Trait>(ConflictsResolver(&mValues));
     mTD.template set<Trait>();
     mValues.insert(
-      std::make_pair(mTD.template getKey<Trait>(), reinterpret_cast<void *>(T)));
+      std::make_pair(mTD.template getKey<Trait>(), reinterpret_cast<void*>(T)));
   }
 
   /// \brief Returns description of a specified trait or nullptr.
@@ -726,10 +738,11 @@ public:
   /// If nullptr is returned it does not mean that a specified trait is not set,
   /// in a descriptor it means that appropriate description has not been
   /// initialized.
-  template<class Trait> Trait * get() {
+  template<class Trait> TraitDataTy<Trait> * get() {
     auto constexpr Key = mTD.template getKey<Trait>();
     auto I = mValues.find(Key);
-    return I == mValues.end() ? nullptr : reinterpret_cast<Trait *>(I->second);
+    return I == mValues.end() ? nullptr :
+      reinterpret_cast<TraitDataTy<Trait>*>(I->second);
   }
 
   /// \brief Removes description of a specified trait from this set and
@@ -740,11 +753,11 @@ public:
   /// initialized.
   /// If the trait has been set it will not be unset in descriptor but
   /// description will be removed from this set.
-  template<class Trait> Trait * release() {
+  template<class Trait> TraitDataTy<Trait> * release() {
     auto constexpr Key = mTD.template getKey<Trait>();
     auto I = mValues.find(Key);
-    Trait *Result =
-      I == mValues.end() ? nullptr : reinterpret_cast<Trait *>(I->second);
+    Trait *Result = I == mValues.end() ? nullptr :
+      reinterpret_cast<TraitDataTy<Trait>*>(I->second);
     mValues.erase(I);
     return Result;
   }
@@ -769,9 +782,11 @@ struct is_conflict<LHS, RHS, TraitDescriptor<Groups...>> :
 /// \brief Checks whether two traits (LHS and RHS) can be set simultaneously.
 ///
 /// This is a specialization for a TraitSet<...> class.
-template<class LHS, class RHS, class TraitMap, class... Groups>
-struct is_conflict<LHS, RHS, TraitSet<TraitDescriptor<Groups...>, TraitMap>> :
-  public is_conflict<LHS, RHS, Groups...>::type {};
+template<class LHS, class RHS,
+  class TraitMap, class TraitTaggeds, class... Groups>
+struct is_conflict<LHS, RHS,
+  TraitSet<TraitDescriptor<Groups...>, TraitMap, TraitTaggeds>> :
+    public is_conflict<LHS, RHS, Groups...>::type {};
 
 /// \brief Finds group of traits which contains a specified trait.
 ///
@@ -783,9 +798,10 @@ struct find_group<Trait, TraitDescriptor<Groups...>> :
 /// \brief Finds group of traits which contains a specified trait.
 ///
 /// This is a specialization for a TraitSet<...> class.
-template<class Trait, class TraitMap, class... Groups>
-struct find_group<Trait, TraitSet<TraitDescriptor<Groups...>, TraitMap>> :
-  public find_group<Trait, Groups...> {};
+template<class Trait, class TraitMap, class TraitTaggeds, class... Groups>
+struct find_group<Trait,
+  TraitSet<TraitDescriptor<Groups...>, TraitMap, TraitTaggeds>> :
+    public find_group<Trait, Groups...> {};
 
 /// \brief Checks if a trait is contained in a group of traits.
 ///
@@ -797,9 +813,10 @@ struct is_contained<Trait, TraitDescriptor<Groups...>> :
 /// \brief Checks if a trait is contained in a group of traits.
 ///
 /// This is a specialization for a TraitSet<...> class.
-template<class Trait, class TraitMap, class... Groups>
-struct is_contained<Trait, TraitSet<TraitDescriptor<Groups...>, TraitMap>> :
-  public is_contained<Trait, Groups...> {};
+template<class Trait, class TraitMap, class TraitTaggeds, class... Groups>
+struct is_contained<Trait,
+  TraitSet<TraitDescriptor<Groups...>, TraitMap, TraitTaggeds>> :
+    public is_contained<Trait, Groups...> {};
 
 namespace detail {
 template<class Descriptor, class... WhatTy> struct UnsetFunctor {
@@ -811,9 +828,9 @@ struct UnsetFunctor<Descriptor, bcl::TraitDescriptor<Groups...>> {
   static void unset(Descriptor &Dptr) { Dptr.template unset<Groups...>(); }
 };
 
-template<class Descriptor, class TraitMap, class... Groups>
-struct UnsetFunctor<
-    Descriptor, bcl::TraitSet<bcl::TraitDescriptor<Groups...>, TraitMap>> {
+template<class Descriptor, class TraitMap, class TraitTaggeds, class... Groups>
+struct UnsetFunctor<Descriptor,
+    bcl::TraitSet<bcl::TraitDescriptor<Groups...>, TraitMap, TraitTaggeds>> {
   static void unset(Descriptor &Dptr) { Dptr.template unset<Groups...>(); }
 };
 
@@ -826,9 +843,9 @@ struct SetFunctor<Descriptor, bcl::TraitDescriptor<Groups...>> {
   static void set(Descriptor &Dptr) { Dptr.template set<Groups...>(); }
 };
 
-template<class Descriptor, class TraitMap, class... Groups>
-struct SetFunctor<
-    Descriptor, bcl::TraitSet<bcl::TraitDescriptor<Groups...>, TraitMap>> {
+template<class Descriptor, class TraitMap, class TraitTaggeds, class... Groups>
+struct SetFunctor<Descriptor,
+    bcl::TraitSet<bcl::TraitDescriptor<Groups...>, TraitMap, TraitTaggeds>> {
   static void set(Descriptor &Dptr) { Dptr.template unset<Groups...>(); }
 };
 
@@ -867,12 +884,12 @@ void set(const WhatTy &What, TraitDescriptor<Traits...> &Where) {
 }
 /// Sets in `Where` all traits that are set in `What`. Both parameters may be
 /// bcl::TraitDescriptor or bcl::TraitSet.
-template<class WhatTy, class TraitMap, class... Traits>
+template<class WhatTy, class TraitMap, class TraitTaggeds, class... Traits>
 void set(const WhatTy &What,
-    TraitSet<TraitDescriptor<Traits...>, TraitMap> &Where) {
+    TraitSet<TraitDescriptor<Traits...>, TraitMap, TraitTaggeds> &Where) {
   detail::SetTraitFunctor<
-    TraitSet<TraitDescriptor<Traits...>, TraitMap>> Functor{ &Where };
-  What.for_each(Functor);
+    TraitSet<TraitDescriptor<Traits...>, TraitMap, TraitTaggeds>> F{ &Where };
+  What.for_each(F);
 }
 }
 
