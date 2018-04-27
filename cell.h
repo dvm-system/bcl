@@ -108,7 +108,7 @@ public:
   /// \sa \ref map_for_each_key "Example"
   template<class Function> static void for_each_key(Function &&F) {
     check_requirements();
-#ifdef __GNUC__
+#if defined __GNUC__ || defined __clang__ || defined _MSC_VER && _MSC_VER >= 1911
     F.template operator()<StaticMap>();
 #else
     F.operator()<StaticMap>();
@@ -252,7 +252,7 @@ template<class Head, class... Tail> struct TypeList<Head, Tail...> {
   /// of functions.
   /// TODO (kaniandr@gmail.com): Remove __GNUC__.
   template<class Function> static void for_each_type(Function &&F) {
-#ifdef __GNUC__
+#if defined __GNUC__ || defined __clang__ || defined _MSC_VER && _MSC_VER >= 1911
     F.template operator()<Type>();
 #else
     F.operator()<Type>();
@@ -386,7 +386,7 @@ template<class... Types> class StaticTypeMap {
 
     /// TODO (kaniandr@gmail.com): Remove __GNUC__.
     template<class CellTy> void operator()() {
-#ifdef __GNUC__
+#if defined __GNUC__ || defined __clang__ || defined _MSC_VER && _MSC_VER >= 1911
       mFunction.template operator()<typename CellTy::ValueType>();
 #else
       mFunction.operator()<typename CellTy::ValueType>();
