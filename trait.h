@@ -688,7 +688,7 @@ public:
   ///
   /// If there are values associated with these traits they will not be changed.
   template<class... Traits> void set() {
-    mTD.set<Traits...>();
+    mTD.template set<Traits...>();
   }
 
   /// Unset all specified traits.
@@ -697,7 +697,7 @@ public:
     auto I = mValues.find(Key);
     if (I != mValues.end() || I->second)
       delete reinterpret_cast<TraitDataTy<Trait>*>(I->second);
-    mTD.unset<Trait>();
+    mTD.template unset<Trait>();
   }
 
   /// Unset all specified traits.
@@ -718,7 +718,7 @@ public:
   /// conflicted traits will be unset.
   /// \note This class manages memory allocation to store description of traits.
   template<class Trait> void set(TraitDataTy<Trait> *T) {
-    auto constexpr Key = mTD.template getKey<Trait>();
+    auto constexpr Key = TraitDescriptor::template getKey<Trait>();
     auto I = mValues.find(Key);
     if (I != mValues.end()) {
       if (I->second)
@@ -739,7 +739,7 @@ public:
   /// in a descriptor it means that appropriate description has not been
   /// initialized.
   template<class Trait> TraitDataTy<Trait> * get() {
-    auto constexpr Key = mTD.template getKey<Trait>();
+    auto constexpr Key = TraitDescriptor::template getKey<Trait>();
     auto I = mValues.find(Key);
     return I == mValues.end() ? nullptr :
       reinterpret_cast<TraitDataTy<Trait>*>(I->second);
