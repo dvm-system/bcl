@@ -604,10 +604,14 @@ class TraitSet {
 
 public:
   TraitSet() = default;
-  TraitSet(const TraitSet &) = default;
   TraitSet(TraitSet &&) = default;
-  TraitSet & operator=(const TraitSet &) = default;
   TraitSet & operator=(TraitSet &&) = default;
+
+  // This set manages memory allocation for a trait description, however,
+  // it does not know how to copy this trait. Hence, only 'move' operations are
+  // available.
+  TraitSet(const TraitSet &) = delete;
+  TraitSet & operator=(const TraitSet &) = delete;
 
   /// Creates set of traits.
   TraitSet(const TraitDescriptor &TD) : mTD(TD) {}
