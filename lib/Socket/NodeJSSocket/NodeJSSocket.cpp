@@ -32,8 +32,8 @@
 #include <memory>
 #include <string>
 #include <stack>
-#include "Socket.h"
-#include "utility.h"
+#include "bcl/Socket.h"
+#include "bcl/utility.h"
 
 using namespace v8;
 using namespace bcl;
