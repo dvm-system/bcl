@@ -29,6 +29,24 @@ configure_file("include/bcl/bcl-config.h.in" "bcl/bcl-config.h")
 
 add_library(Core INTERFACE)
 
+# Populate core headers for GUI.
+if(MSVC)
+  target_sources(Core INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/bcl/bcl-config.h>
+    $<INSTALL_INTERFACE:include/bcl/bcl-config.h>)
+
+  file(GLOB_RECURSE BCL_CORE_HEADERS
+    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/*.h)
+  foreach(F ${BCL_CORE_HEADERS})
+    if(NOT BCL_LEGACY AND ${F} MATCHES "^include/bcl/legacy/.*")
+      continue()
+    endif()
+    target_sources(Core INTERFACE
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${F}>
+      $<INSTALL_INTERFACE:${F}>)
+  endforeach()
+endif(MSVC)
+
 install(TARGETS Core EXPORT BCLExports)
 
 set(BCL_INCLUDE_DIR
