@@ -19,3 +19,12 @@ set(BCL_CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 
 # List of headers from the core of BCL.
 get_property(BCL_CORE_HEADERS TARGET BCL::Core PROPERTY INTERFACE_SOURCES)
+
+# ON if NodeJSSocket is available, OFF otherwise.
+set(BCL_NODEJS_SOCKET @BCL_NODEJS_SOCKET@)
+
+# List of sources from NodeJSSocket (if NodeJSSocket is available).
+if (BCL_NODEJS_SOCKET)
+  get_property(BCL_NODEJS_SOCKET_SOURCES TARGET BCL::NodeJSSocket
+    PROPERTY INTERFACE_SOURCES)
+endif()

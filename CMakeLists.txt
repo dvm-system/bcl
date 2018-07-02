@@ -74,7 +74,7 @@ write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/bcl/BCLConfigVersion.cmake"
   COMPATIBILITY AnyNewerVersion)
 configure_file(cmake/BCLConfig.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/bcl/BCLConfig.cmake COPYONLY)
+  ${CMAKE_CURRENT_BINARY_DIR}/bcl/BCLConfig.cmake @ONLY)
 
 # Copy all implemented CMake modules to binary directory.
 file(GLOB_RECURSE BCL_CMAKE_MODULES "cmake/*.cmake")
