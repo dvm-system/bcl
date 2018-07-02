@@ -15,7 +15,15 @@
 
 include("${CMAKE_CURRENT_LIST_DIR}/BCLExports.cmake")
 
+set(BCL_DESCRIPTION "@BCL_DESCRIPTION@")
+set(BCL_AUTHOR "@BCL_AUTHOR@")
+set(BCL_HOMEPAGE_URL "@BCL_HOMEPAGE_URL@")
+
+# Path to available CMake modules.
 set(BCL_CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+
+# ON if legacy code is available, OFF otherwise.
+set(BCL_LEGACY @BCL_LEGACY@)
 
 # List of headers from the core of BCL.
 get_property(BCL_CORE_HEADERS TARGET BCL::Core PROPERTY INTERFACE_SOURCES)
