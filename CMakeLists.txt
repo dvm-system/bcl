@@ -24,6 +24,7 @@ set(BCL_HOMEPAGE_URL "https://bitbucket.org/dvm-system/idb")
 
 option(BCL_LEGACY "Enable legacy code." OFF)
 option(BCL_NODEJS_SOCKET "Enable Node.js wocket wrapper library." ON)
+option(BCL_TEST "Build tests." ON)
 
 configure_file("include/bcl/bcl-config.h.in" "bcl/bcl-config.h")
 
@@ -96,3 +97,9 @@ if (BCL_NODEJS_SOCKET)
   add_subdirectory(lib)
 endif()
 
+if (BCL_TEST)
+  enable_testing()
+  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
+  include(BCLCompilerOptions)
+  add_subdirectory(test)
+endif()
