@@ -26,4 +26,6 @@ add_test(tq-lt-three tq-lt-three)
 
 install(TARGETS tq-perf tq-empty tq-eq-one tq-eq-two tq-lt-two-one tq-lt-three
   EXPORT BCLExports DESTINATION bin)
-
+INSTALL(FILES tq_perf.cpp tq_empty.cpp tq_eq_one.cpp tq_eq_two.cpp
+  tq_lt_two_one.cpp tq_lt_three.cpp
+  DESTINATION test/tq/)
