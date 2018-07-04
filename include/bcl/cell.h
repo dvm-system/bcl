@@ -15,11 +15,11 @@
 #ifdef BCL_LEGACY
 // TODO (kaniandr@gmail.com) : Remove it when all dependent files will be
 // rewritten.
-#include "cell_legacy.h"
+#include "legacy/cell_legacy.h"
 #endif//BCL_LEGACY
 
 
-#include <utility.h>
+#include "utility.h"
 #include <cassert>
 #include <type_traits>
 
@@ -35,7 +35,7 @@ namespace bcl {
 /// For example, see the bcl::StaticMapKey class.
 /// \tparam Args Each parameter is a key of a cell. This key is used to access
 /// an appropriate cell.
-/// \sa \ref cell_test
+/// \sa \ref static_map_example
 template<class... Keys> class StaticMap;
 
 /// This represents empty static map.
@@ -731,49 +731,50 @@ private:
 };
 }
 
-/// \page cell_test	Example of bcl::StaticMap usage. Workers and salary
+/// \page static_map_example Example of bcl::StaticMap usage. Workers and salary
 /// Let us create a record for a table reflecting the salary of workers:
-///	Name | Salary
-///	---- | --------
-///	Smit | 300.50
+/// Name | Salary
+/// ---- | --------
+/// Smit | 300.50
 /// Each record must be possible to print.
 /// With each worker the following information will be associated:
 /// - name will be stored in a cell with key Name;
 /// - salary will be stored in a cell with key Salary.
-///	The source code of the example is available from \a \b cell_test.cpp
+/// The source code of the example is available from
+/// \a \b static_map_example.cpp
 ///
-///	\dontinclude cell_test.cpp
-///	1. Include necessary C++ headers:
-///	\until iostream
-///	2. Specify that all names from bcl namespace must be visible:
-///	\skipline using
-///	3. Define keys for each cell in the map:
-///	\n Name of a worker:
-///	\skip Name
-///	\until };
-///	Salary of a worker:
-///	\skip Salary
-///	\until };
-///	4. Define static map which comprises two cells mentioned above:
-///	\skipline typedef
-///	5. \anchor cell_for_each_key
-///	Create a functor to print structure of a static map
+/// \dontinclude static_map_example.cpp
+/// 1. Include necessary C++ headers:
+/// \until string
+/// 2. Specify that all names from bcl namespace must be visible:
+/// \skipline using
+/// 3. Define keys for each cell in the map:
+/// \n Name of a worker:
+/// \skip Name
+/// \until };
+/// Salary of a worker:
+/// \skip Salary
+/// \until };
+/// 4. Define static map which comprises two cells mentioned above:
+/// \skipline typedef
+/// 5. \anchor cell_for_each_key
+/// Create a functor to print structure of a static map
 /// (bcl::StaticMap::for_each_key() will be used for this purpose):
-///	\skip Functor
-///	\until };
-///	6. \anchor cell_for_each
-///	Create a functor to print worker's name and salary
+/// \skip Functor
+/// \until };
+/// 6. \anchor cell_for_each
+/// Create a functor to print worker's name and salary
 /// (bcl::StaticMap::for_each() will be used for this purpose):
-///	\skip Functor
-///	\until };
-///	7. Create an empty record, initialize it with some values and print:
-///	\skip main
-///	\until }
-///	The example displays the following output:
-///	\n `Structure of salary information collection:`
-///	\n `Name is <value>`
-///	\n `Salary is <value>`
+/// \skip Functor
+/// \until };
+/// 7. Create an empty record, initialize it with some values and print:
+/// \skip main
+/// \until }
+/// The example displays the following output:
+/// \n `Structure of salary information collection:`
+/// \n `Name is <value>`
+/// \n `Salary is <value>`
 /// \n `Worker's salary is:`
-///	\n `Name is Smit`
-///	\n `Salary is 300.5`
+/// \n `Name is Smit`
+/// \n `Salary is 300.5`
 #endif//СELL_H

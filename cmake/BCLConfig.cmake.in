@@ -28,6 +28,9 @@ set(BCL_LEGACY @BCL_LEGACY@)
 # ON if tests is available, OFF otherwise.
 set(BCL_TEST @BCL_TEST@)
 
+# ON if examples is available, OFF otherwise.
+set(BCL_EXAMPLE @BCL_EXAMPLE@)
+
 # List of headers from the core of BCL.
 get_property(BCL_CORE_HEADERS TARGET BCL::Core PROPERTY INTERFACE_SOURCES)
 
