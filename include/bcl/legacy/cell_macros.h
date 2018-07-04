@@ -1,5 +1,22 @@
 ﻿/*! \file
     \brief Содержит макросы для объявления коллекций ячеек.
+
+                         Base Construction Library (BCL)
+
+    Copyright 2018 Nikita Kataev
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
     \details Файл сгенерирован автоматически с помощью Perl-скрипта \b cell.pl версии 1.0 17.09.2012.
     \date Mon Sep 17 16:15:28 2012
     \details Макросы имеют вид 'CELL_COLL_<\a N>( cellId_1_, ..., cellId_<\a N>_)',
