@@ -26,8 +26,14 @@ add_executable(tq-lt-three tq_lt_three.cpp)
 target_link_libraries(tq-lt-three Core)
 add_test(tq-lt-three tq-lt-three)
 
-install(TARGETS tq-perf tq-empty tq-eq-one tq-eq-two tq-lt-two-one tq-lt-three
+set(TQ_PERF_TARGETS tq-perf)
+set(TQ_TEST_TARGETS tq-empty tq-eq-one tq-eq-two tq-lt-two-one tq-lt-three)
+
+set_target_properties(${TQ_PERF_TARGETS} PROPERTIES FOLDER "BCL benchmarks")
+set_target_properties(${TQ_TEST_TARGETS} PROPERTIES FOLDER "BCL tests")
+
+install(TARGETS ${TQ_PERF_TARGETS} ${TQ_TEST_TARGETS}
   EXPORT BCLExports DESTINATION bin)
-INSTALL(FILES tq_perf.cpp tq_empty.cpp tq_eq_one.cpp tq_eq_two.cpp
+install(FILES tq_perf.cpp tq_empty.cpp tq_eq_one.cpp tq_eq_two.cpp
   tq_lt_two_one.cpp tq_lt_three.cpp
   DESTINATION test/tq/)

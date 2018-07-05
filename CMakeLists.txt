@@ -26,6 +26,7 @@ option(BCL_TEST "Build tests if BUILD_TESTING is ON." ON)
 option(BCL_EXAMPLE "Build examples." ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 configure_file("include/bcl/bcl-config.h.in" "bcl/bcl-config.h")
 
