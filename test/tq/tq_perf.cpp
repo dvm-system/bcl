@@ -78,7 +78,8 @@ int main(int Argc, char **Argv) {
   unsigned MaxIter = (Argc > 2) ? std::atoi(Argv[2]) : 10;
   unsigned SmallSize = (Argc > 3) ? std::atoi(Argv[3]) : 3;
   int **InitArray = new int * [Size];
-  for (int I = 0; I < MaxIter; ++I) {
+  TimeT PushQ(0), PushTQ(0), PopQ(0), PopTQ(0);
+  for (unsigned I = 0; I < MaxIter; ++I) {
     auto Q = pushTime<std::queue<int *>>(InitArray, Size, PushQ);
     PopQ += popTime(Size, Q);
     auto TQ = pushTime<bcl::TransparentQueue<int>>(InitArray, Size, PushTQ);
@@ -86,8 +87,9 @@ int main(int Argc, char **Argv) {
   }
   unsigned *SmallSizes = new unsigned [Size];
   auto BoundLessNum = initSmallSizes(2, SmallSize, Size, SmallSizes);
-  for (int Iter = 0; Iter < MaxIter; ++Iter)
-    for (int I = 0; I < Size; ++I) {
+  TimeT PushSmallQ(0), PushSmallTQ(0), PopSmallQ(0), PopSmallTQ(0);
+  for (unsigned Iter = 0; Iter < MaxIter; ++Iter)
+    for (std::size_t I = 0; I < Size; ++I) {
       auto Q = pushTime<std::queue<int *>>(
         InitArray, SmallSizes[I], PushSmallQ);
       PopSmallQ += popTime(SmallSizes[I], Q);

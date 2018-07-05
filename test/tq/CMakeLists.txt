@@ -1,6 +1,8 @@
 add_executable(tq-perf tq_perf.cpp)
 target_link_libraries(tq-perf Core)
-target_compile_options(tq-perf PRIVATE -O3)
+if (BCL_COMPILER_IS_GCC_COMPATIBLE)
+  target_compile_options(tq-perf PRIVATE -O3)
+endif()
 
 include(CTest)
 
