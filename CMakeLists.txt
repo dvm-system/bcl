@@ -22,7 +22,6 @@ set(BCL_AUTHOR "Nikita Kataev (kaniandr@gmail.com)")
 set(BCL_HOMEPAGE_URL "https://bitbucket.org/dvm-system/idb")
 
 option(BCL_LEGACY "Enable legacy code." OFF)
-option(BCL_NODEJS_SOCKET "Enable Node.js wocket wrapper library." ON)
 option(BCL_TEST "Build tests if BUILD_TESTING is ON." ON)
 option(BCL_EXAMPLE "Build examples." ON)
 
@@ -98,9 +97,7 @@ install(FILES
 install(DIRECTORY cmake DESTINATION .
   FILES_MATCHING PATTERN *.cmake)
 
-if (BCL_NODEJS_SOCKET)
-  add_subdirectory(lib)
-endif()
+add_subdirectory(lib)
 
 if (BCL_TEST)
   enable_testing()
