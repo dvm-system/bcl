@@ -26,6 +26,8 @@
 #ifndef CELL_H
 #define CELL_H
 
+#include <bcl/bcl-config.h>
+
 #ifdef BCL_LEGACY
 // TODO (kaniandr@gmail.com) : Remove it when all dependent files will be
 // rewritten.

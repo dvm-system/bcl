@@ -24,6 +24,7 @@
 
 #include <bcl/cell.h>
 #include <iostream>
+#include <string>
 #include <typeinfo>
 
 using namespace bcl;
