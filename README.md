@@ -18,9 +18,7 @@ cmake_minimum_required(VERSION 3.4.3)
 
 # Set BCL installation pass and find package.
 # It is also possible to use add_subdirectory() here to configure BCL
-# without installation. Note, that in this case a path to BCL will be stored
-# in the CMake package registry. So, it is not necessary to update
-# CMAKE_PREFIX_PATH.
+# without installation.
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} <path-to-bcl>)
 find_package(BCL 3.0 REQUIRED)
 

@@ -67,11 +67,6 @@ install(DIRECTORY include/bcl DESTINATION include
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcl/bcl-config.h
   DESTINATION include/bcl)
 
-# Export package for the current build tree. This helps dependent packages find
-# and use this package it it has been added into the build tree with
-# add_subdirectory() command.
-export(PACKAGE BCL)
-
 # Build Config-file Package configuration.
 export(EXPORT BCLExports
   FILE ${CMAKE_CURRENT_BINARY_DIR}/bcl/BCLExports.cmake NAMESPACE BCL::)
