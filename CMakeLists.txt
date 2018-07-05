@@ -21,10 +21,9 @@ set(BCL_DESCRIPTION "Base Construction Library")
 set(BCL_AUTHOR "Nikita Kataev (kaniandr@gmail.com)")
 set(BCL_HOMEPAGE_URL "https://bitbucket.org/dvm-system/idb")
 
-
 option(BCL_LEGACY "Enable legacy code." OFF)
 option(BCL_NODEJS_SOCKET "Enable Node.js wocket wrapper library." ON)
-option(BCL_TEST "Build tests." ON)
+option(BCL_TEST "Build tests if BUILD_TESTING is ON." ON)
 option(BCL_EXAMPLE "Build examples." ON)
 
 configure_file("include/bcl/bcl-config.h.in" "bcl/bcl-config.h")
