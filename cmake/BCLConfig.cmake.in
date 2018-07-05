@@ -33,21 +33,36 @@ set(BCL_EXAMPLE @BCL_EXAMPLE@)
 set(BCL_NODEJS_SOCKET @BCL_NODEJS_SOCKET@)
 
 if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/BCLExports.cmake)
+  # ON if BCLExports.cmake is available.
+  set(BCL_EXPORT ON)
+
   include(${CMAKE_CURRENT_LIST_DIR}/BCLExports.cmake)
 
   # List of headers from the core of BCL.
   get_property(BCL_CORE_HEADERS TARGET BCL::Core PROPERTY INTERFACE_SOURCES)
 
   # List of sources from NodeJSSocket (if NodeJSSocket is available).
-  if (BCL_NODEJS_SOCKET)
+  if(BCL_NODEJS_SOCKET)
     get_property(BCL_NODEJS_SOCKET_SOURCES TARGET BCL::NodeJSSocket
       PROPERTY INTERFACE_SOURCES)
   endif()
-
-  # ON if BCLExports.cmake is available.
-  set(BCL_EXPORT ON)
 else()
   # OFF if BCLExports.cmake is not available. For example, if add_subdirectory()
   # has been used to add this project to the build tree.
   set(BCL_EXPORT OFF)
+
+  add_library(BCL::Core ALIAS Core)
+  add_library(BCL::NodeJSSocket ALIAS NodeJSSocket)
+
+  # Try to set some variables which is available in BCL build tree. So, the
+  # following variables will be available if add_subdirectory() has been used
+  # configure this project.
+
+  # List of headers from the core of BCL.
+  set(BCL_CORE_HEADERS @BCL_CORE_HEADERS@)
+
+  # List of sources from NodeJSSocket (if NodeJSSocket is available).
+  if(BCL_NODEJS_SOCKET)
+    set(BCL_NODEJS_SOCKET_SOURCES @BCL_NODEJS_SOCKET_SOURCES@)
+  endif()
 endif()

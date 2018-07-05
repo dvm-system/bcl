@@ -26,6 +26,8 @@ option(BCL_NODEJS_SOCKET "Enable Node.js wocket wrapper library." ON)
 option(BCL_TEST "Build tests if BUILD_TESTING is ON." ON)
 option(BCL_EXAMPLE "Build examples." ON)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
+
 configure_file("include/bcl/bcl-config.h.in" "bcl/bcl-config.h")
 
 add_library(Core INTERFACE)
@@ -35,16 +37,19 @@ if(MSVC)
   target_sources(Core INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/bcl/bcl-config.h>
     $<INSTALL_INTERFACE:include/bcl/bcl-config.h>)
+  set(BCL_CORE_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/bcl/bcl-config.h>)
+  include(BCLUtils)
 
-  file(GLOB_RECURSE BCL_CORE_HEADERS
+  file(GLOB_RECURSE BCL_CORE_HEADERS_RELATIVE
     RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/*.h)
-  foreach(F ${BCL_CORE_HEADERS})
+  foreach(F ${BCL_CORE_HEADERS_RELATIVE})
     if(NOT BCL_LEGACY AND ${F} MATCHES "^include/bcl/legacy/.*")
       continue()
     endif()
     target_sources(Core INTERFACE
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${F}>
       $<INSTALL_INTERFACE:${F}>)
+    bcl_append(${CMAKE_CURRENT_SOURCE_DIR}/${F} BCL_CORE_HEADERS)
   endforeach()
 endif(MSVC)
 
@@ -99,13 +104,11 @@ endif()
 
 if (BCL_TEST)
   enable_testing()
-  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
   include(BCLCompilerOptions)
   add_subdirectory(test)
 endif()
 
 if (BCL_EXAMPLE)
-  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
   include(BCLCompilerOptions)
   add_subdirectory(example)
 endif()
