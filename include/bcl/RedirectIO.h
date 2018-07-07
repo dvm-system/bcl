@@ -23,7 +23,7 @@
 // ./a.out 2>data.err in the code of 'a' the RedirectIO can be used as follows:
 //
 // // a.cpp
-// #include <RedirectIO.h>
+// #include <bcl/RedirectIO.h>
 // int main() {
 //   bcl::RedirectIO R(STDERR_FILENO, "data.err");
 //   // now all writings in stderr will be redirected to "data.err"
