@@ -24,6 +24,7 @@ set(BCL_HOMEPAGE_URL "https://bitbucket.org/dvm-system/idb")
 option(BCL_LEGACY "Enable legacy code." OFF)
 option(BCL_TEST "Build tests if BUILD_TESTING is ON." ON)
 option(BCL_EXAMPLE "Build examples." ON)
+option(BCL_INSTALL "Enable installation of BCL." ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -49,7 +50,7 @@ if(MSVC)
     target_sources(Core INTERFACE
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${F}>
       $<INSTALL_INTERFACE:${F}>)
-    bcl_append(${CMAKE_CURRENT_SOURCE_DIR}/${F} BCL_CORE_HEADERS)
+    list(APPEND BCL_CORE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/${F})
   endforeach()
 endif(MSVC)
 
@@ -67,10 +68,12 @@ else()
   set(EXCLUDE_LEGACY "legacy")
 endif()
 
-install(DIRECTORY include/bcl DESTINATION include
-  FILES_MATCHING PATTERN *.h PATTERN "${EXCLUDE_LEGACY}" EXCLUDE)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcl/bcl-config.h
-  DESTINATION include/bcl)
+if(BCL_INSTALL)
+  install(DIRECTORY include/bcl DESTINATION include
+    FILES_MATCHING PATTERN *.h PATTERN "${EXCLUDE_LEGACY}" EXCLUDE)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcl/bcl-config.h
+    DESTINATION include/bcl)
+endif()
 
 # Build Config-file Package configuration.
 export(EXPORT BCLExports
@@ -89,14 +92,16 @@ foreach(F ${BCL_CMAKE_MODULES})
 endforeach()
 
 # Install Config-file Package configuration.
-install(EXPORT BCLExports
-  FILE BCLExports.cmake NAMESPACE BCL:: DESTINATION cmake)
-install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/bcl/BCLConfig.cmake
-  ${CMAKE_CURRENT_BINARY_DIR}/bcl/BCLConfigVersion.cmake
-  DESTINATION cmake)
-install(DIRECTORY cmake DESTINATION .
+if(BCL_INSTALL)
+  install(EXPORT BCLExports
+    FILE BCLExports.cmake NAMESPACE BCL:: DESTINATION cmake)
+  install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/bcl/BCLConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/bcl/BCLConfigVersion.cmake
+    DESTINATION cmake)
+  install(DIRECTORY cmake DESTINATION .
   FILES_MATCHING PATTERN *.cmake)
+endif()
 
 add_subdirectory(lib)
 

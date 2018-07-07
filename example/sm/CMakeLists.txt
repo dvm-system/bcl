@@ -6,6 +6,8 @@ target_link_libraries(stm-example Core)
 
 set_target_properties(sm-example stm-example PROPERTIES FOLDER "BCL examples")
 
-install(TARGETS sm-example stm-example EXPORT BCLExports DESTINATION bin)
-install(FILES static_map_example.cpp type_map_example.cpp
-  DESTINATION example/sm)
+if(BCL_INSTALL)
+  install(TARGETS sm-example stm-example EXPORT BCLExports DESTINATION bin)
+  install(FILES static_map_example.cpp type_map_example.cpp
+    DESTINATION example/sm)
+endif()
