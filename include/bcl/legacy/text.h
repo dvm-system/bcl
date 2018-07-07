@@ -18,8 +18,8 @@
     limitations under the License.
 */
 
-#ifndef TEXT_H
-#define TEXT_H
+#ifndef BCL_TEXT_H
+#define BCL_TEXT_H
 
 #include "declaration.h"
 #include "exception.h"
@@ -121,4 +121,4 @@ namespace Base
     }
 }
 
-#endif//TEXT_H
+#endif//BCL_TEXT_H

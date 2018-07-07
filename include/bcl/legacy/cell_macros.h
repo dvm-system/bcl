@@ -28,8 +28,8 @@
     \param cellId_<I> Идентификатор ячейки (см. Base::Cell)
     \sa \ref cell_def "Пример"
 */
-#ifndef CELL_MACROS_H
-#define CELL_MACROS_H
+#ifndef BCL_CELL_MACROS_H
+#define BCL_CELL_MACROS_H
 
 #define CELL_COLL_1( cellId_1_) Base::Cell< cellId_1_ >
 #define CELL_COLL_2( cellId_1_, cellId_2_) Base::Cell< cellId_1_, CELL_COLL_1( cellId_2_) >
@@ -134,4 +134,4 @@
 #define CELL_COLL_100( cellId_1_, cellId_2_, cellId_3_, cellId_4_, cellId_5_, cellId_6_, cellId_7_, cellId_8_, cellId_9_, cellId_10_, cellId_11_, cellId_12_, cellId_13_, cellId_14_, cellId_15_, cellId_16_, cellId_17_, cellId_18_, cellId_19_, cellId_20_, cellId_21_, cellId_22_, cellId_23_, cellId_24_, cellId_25_, cellId_26_, cellId_27_, cellId_28_, cellId_29_, cellId_30_, cellId_31_, cellId_32_, cellId_33_, cellId_34_, cellId_35_, cellId_36_, cellId_37_, cellId_38_, cellId_39_, cellId_40_, cellId_41_, cellId_42_, cellId_43_, cellId_44_, cellId_45_, cellId_46_, cellId_47_, cellId_48_, cellId_49_, cellId_50_, cellId_51_, cellId_52_, cellId_53_, cellId_54_, cellId_55_, cellId_56_, cellId_57_, cellId_58_, cellId_59_, cellId_60_, cellId_61_, cellId_62_, cellId_63_, cellId_64_, cellId_65_, cellId_66_, cellId_67_, cellId_68_, cellId_69_, cellId_70_, cellId_71_, cellId_72_, cellId_73_, cellId_74_, cellId_75_, cellId_76_, cellId_77_, cellId_78_, cellId_79_, cellId_80_, cellId_81_, cellId_82_, cellId_83_, cellId_84_, cellId_85_, cellId_86_, cellId_87_, cellId_88_, cellId_89_, cellId_90_, cellId_91_, cellId_92_, cellId_93_, cellId_94_, cellId_95_, cellId_96_, cellId_97_, cellId_98_, cellId_99_, cellId_100_) Base::Cell< cellId_1_, CELL_COLL_99( cellId_2_, cellId_3_, cellId_4_, cellId_5_, cellId_6_, cellId_7_, cellId_8_, cellId_9_, cellId_10_, cellId_11_, cellId_12_, cellId_13_, cellId_14_, cellId_15_, cellId_16_, cellId_17_, cellId_18_, cellId_19_, cellId_20_, cellId_21_, cellId_22_, cellId_23_, cellId_24_, cellId_25_, cellId_26_, cellId_27_, cellId_28_, cellId_29_, cellId_30_, cellId_31_, cellId_32_, cellId_33_, cellId_34_, cellId_35_, cellId_36_, cellId_37_, cellId_38_, cellId_39_, cellId_40_, cellId_41_, cellId_42_, cellId_43_, cellId_44_, cellId_45_, cellId_46_, cellId_47_, cellId_48_, cellId_49_, cellId_50_, cellId_51_, cellId_52_, cellId_53_, cellId_54_, cellId_55_, cellId_56_, cellId_57_, cellId_58_, cellId_59_, cellId_60_, cellId_61_, cellId_62_, cellId_63_, cellId_64_, cellId_65_, cellId_66_, cellId_67_, cellId_68_, cellId_69_, cellId_70_, cellId_71_, cellId_72_, cellId_73_, cellId_74_, cellId_75_, cellId_76_, cellId_77_, cellId_78_, cellId_79_, cellId_80_, cellId_81_, cellId_82_, cellId_83_, cellId_84_, cellId_85_, cellId_86_, cellId_87_, cellId_88_, cellId_89_, cellId_90_, cellId_91_, cellId_92_, cellId_93_, cellId_94_, cellId_95_, cellId_96_, cellId_97_, cellId_98_, cellId_99_, cellId_100_) >
 //! \endcond CELL_COLL
 
-#endif//CELL_MACROS_H
+#endif//BCL_CELL_MACROS_H

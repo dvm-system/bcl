@@ -19,8 +19,8 @@
 
     Позволяет задавать неопределенные значения для объектов разных типов.
 */
-#ifndef VALUE_H
-#define VALUE_H
+#ifndef BCL_VALUE_H
+#define BCL_VALUE_H
 
 #include "declaration.h"
 #include "exception.h"
@@ -747,4 +747,4 @@ namespace Utility
         return os;
     }
 }
-#endif//VALUE_H
+#endif//BCL_VALUE_H

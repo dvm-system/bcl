@@ -42,7 +42,7 @@
 #      define BCL_DECLSPEC __attribute__ (dllimport))
 #    else
 #      define BCL_DECLSPEC __declspec(dllimport)
-#    endif      
+#    endif
 #  endif
 #else
 #  if __GNUC__ > 4

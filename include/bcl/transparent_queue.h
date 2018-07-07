@@ -23,8 +23,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef TRANSPARENT_QUEUE_H
-#define TRANSPARENT_QUEUE_H
+#ifndef BCL_TRANSPARENT_QUEUE_H
+#define BCL_TRANSPARENT_QUEUE_H
 
 #include <assert.h>
 #include <cstring>
@@ -287,4 +287,4 @@ template<class Ty> inline bool operator>=(
 }
 }
 
-#endif//TRANSPARENT_QUEUE_H
+#endif//BCL_TRANSPARENT_QUEUE_H

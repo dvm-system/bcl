@@ -17,8 +17,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#ifndef EXCEPTION_H
-#define EXCEPTION_H
+#ifndef BCL_EXCEPTION_H
+#define BCL_EXCEPTION_H
 
 #include "declaration.h"
 #include "../utility.h"
@@ -598,4 +598,4 @@ namespace Base
     }
 }
 
-#endif//EXCEPTION_H
+#endif//BCL_EXCEPTION_H

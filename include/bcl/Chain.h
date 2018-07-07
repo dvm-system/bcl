@@ -426,4 +426,4 @@ bool operator!=(Ty *LHS, const ChainIteratorC<Ty, Tag> &RHS) noexcept {
   return RHS != LHS;
 }
 }
-#endif// BCL_CHAIN_H
+#endif//BCL_CHAIN_H

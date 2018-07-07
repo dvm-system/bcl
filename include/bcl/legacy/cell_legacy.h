@@ -17,8 +17,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#ifndef CELL_LEGACY_H
-#define CELL_LEGACY_H
+#ifndef BCL_CELL_LEGACY_H
+#define BCL_CELL_LEGACY_H
 
 #include "declaration.h"
 #include "cell_macros.h"
@@ -538,4 +538,4 @@ namespace Base
 	\n `Salary is 300.5`
 */
 
-#endif//СELL_LEGACY_H
+#endif//BCL_СELL_LEGACY_H

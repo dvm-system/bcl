@@ -25,8 +25,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef TRAIT_H
-#define TRAIT_H
+#ifndef BCL_TRAIT_H
+#define BCL_TRAIT_H
 
 #include "cell.h"
 #include "utility.h"
@@ -1134,4 +1134,4 @@ public:
   }
 };
 }
-#endif//TRAIT_H
+#endif//BCL_TRAIT_H

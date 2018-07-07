@@ -17,8 +17,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#ifndef STATIC_TREE_H
-#define STATIC_TREE_H
+#ifndef BCL_STATIC_TREE_H
+#define BCL_STATIC_TREE_H
 
 #include "../utility.h"
 
@@ -188,4 +188,4 @@ namespace Base
     }
 }
 
-#endif//STATIC_TREE_H
+#endif//BCL_STATIC_TREE_H

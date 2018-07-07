@@ -23,8 +23,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef CELL_H
-#define CELL_H
+#ifndef BCL_CELL_H
+#define BCL_CELL_H
 
 #include <bcl/bcl-config.h>
 
@@ -793,4 +793,4 @@ private:
 /// \n `Worker's salary is:`
 /// \n `Name is Smit`
 /// \n `Salary is 300.5`
-#endif//СELL_H
+#endif//BCL_СELL_H

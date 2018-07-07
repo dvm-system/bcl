@@ -23,8 +23,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef UTILITY_H
-#define UTILITY_H
+#ifndef BCL_UTILITY_H
+#define BCL_UTILITY_H
 
 #include <climits>
 #include <type_traits>
@@ -859,4 +859,4 @@ namespace Utility
     //@}
 }
 
-#endif//UTILITY_H
+#endif//BCL_UTILITY_H
