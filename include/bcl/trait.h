@@ -763,6 +763,18 @@ public:
       reinterpret_cast<TraitDataTy<Trait>*>(I->second);
   }
 
+  /// \brief Returns description of a specified trait or nullptr.
+  ///
+  /// If nullptr is returned it does not mean that a specified trait is not set,
+  /// in a descriptor it means that appropriate description has not been
+  /// initialized.
+  template<class Trait> const TraitDataTy<Trait> * get() const {
+    auto constexpr Key = TraitDescriptor::template getKey<Trait>();
+    auto I = mValues.find(Key);
+    return I == mValues.end() ? nullptr :
+      reinterpret_cast<TraitDataTy<Trait>*>(I->second);
+  }
+
   /// \brief Removes description of a specified trait from this set and
   /// returns it.
   ///
