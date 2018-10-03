@@ -27,6 +27,7 @@
 #define BCL_UTILITY_H
 
 #include <climits>
+#include <cstring>
 #include <type_traits>
 #include <memory>
 
@@ -275,6 +276,21 @@ make_unique(size_t n) {
 template <class T, class... Args>
 typename std::enable_if<std::extent<T>::value != 0>::type
 make_unique(Args &&...) = delete;
+
+/// Exchanges contents of passed objects, this is useful if specified objects
+/// haven't necessary operators available (e.g. private operator=, etc).
+/// Note, this function does not swap external memory to which objects refer.
+template<typename T> void swapMemory(T &LObj, T &RObj) {
+  if (&LObj == &RObj)
+    return;
+  char* Tmp = nullptr;
+  const int Size = sizeof(T) / sizeof(*Tmp);
+  Tmp = new char[Size];
+  std::memcpy(Tmp, &LObj, Size);
+  std::memcpy(&LObj, &RObj, Size);
+  std::memcpy(&RObj, Tmp, Size);
+  delete[] Tmp;
+}
 }
 
 #ifndef NULL
