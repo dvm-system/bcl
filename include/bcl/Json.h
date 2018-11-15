@@ -112,6 +112,7 @@
 #include <cctype>
 #include <map>
 #include <memory>
+#include <set>
 #include <stack>
 #include <string>
 #include <tuple>
@@ -1229,6 +1230,47 @@ struct Traits<std::vector<Ty, Allocator>> {
     } else {
       JSON += "[]";
     }
+  }
+};
+
+template<class KeyTy, class Compare, class Allocator>
+struct Traits<std::set<KeyTy, Compare, Allocator>> {
+  typedef std::set<KeyTy, Compare, Allocator> SetTy;
+  inline static bool parse(SetTy &Dest, Lexer &Lex) {
+    if (!Lex.checkSpecial(Token::LEFT_BRACKET))
+      return false;
+    return Parser<>::traverse<Traits<SetTy>>(Dest, Lex);
+  }
+  inline static bool parse(SetTy &Dest, Lexer &Lex,
+      std::pair<Position, Position> Key) {
+    KeyTy KeyValue;
+    if (!Traits<KeyTy>::parse(KeyValue, Lex))
+      return false;
+    auto Pair = Dest.insert(std::move(KeyValue));
+    if (!Pair.second) {
+      Lex.errors().insert(JSON_ERROR(8), Lex.start());
+      return false;
+    }
+    return true;
+  }
+  inline static void unparse(String &JSON, const SetTy &Obj) {
+    JSON += '[';
+    if (!Obj.empty()) {
+      auto I = Obj.begin(), EI = Obj.end();
+      for (--EI; I != EI; ++I) {
+        String Key;
+        Traits<KeyTy>::unparse(Key, *I);
+        if (!Key.empty())
+          JSON += Key + ',';
+      }
+      String Key;
+      Traits<KeyTy>::unparse(Key, *I);
+      if (!Key.empty())
+        JSON += Key;
+      else if (JSON.back() == ',')
+        JSON.erase(JSON.size() - 1);
+    }
+    JSON += ']';
   }
 };
 
