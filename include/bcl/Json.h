@@ -110,10 +110,12 @@
 #include "cell.h"
 #include "Diagnostic.h"
 #include <cctype>
+#include <map>
 #include <memory>
 #include <stack>
 #include <string>
 #include <tuple>
+#include <vector>
 
 #define JSON_ERROR_1 "unexpected end of string"
 #define JSON_ERROR_2 "unexpected character '%c' expected '%c'"
@@ -125,12 +127,6 @@
 #define JSON_ERROR_8 "target object type does not support duplicate of keys"
 #define JSON_ERROR_9 "illegal value"
 #define JSON_ERROR(C) C, JSON_ERROR_##C
-
-namespace std {
-template<class Ty, class Allocator> class vector;
-template<class KeyTy, class Ty, class Compare, class Allocator> class map;
-template<class KeyTy, class Ty, class Compare, class Allocator> class multimap;
-}
 
 namespace json {
 /// This is a base class for all JSON objects which can be obtained when
