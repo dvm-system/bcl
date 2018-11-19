@@ -723,7 +723,7 @@ public:
   /// in a JSON string.
   template<class Ty>
   static String unparseAsObject(const Ty &Obj, const char *NameKey = "name") {
-    return unparse(static_cast<const Object &>(Obj));
+    return unparse(static_cast<const Object &>(Obj), NameKey);
   }
 
   /// Unparses a specified JSON object to a JSON string.
