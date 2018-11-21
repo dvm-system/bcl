@@ -54,54 +54,164 @@
 // pointers to char (char *). This is due to there is no any way to determine
 // size of array.
 //
+//===----------------------------------------------------------------------===//
+//
 // Now let us see some usage example.
 //
-// namespace detail {
-// struct ExampleObject {
-//   struct Text { TO_TEXT(name, "Text") typedef const char *  ValueType; };
-// }
-// struct ExampleObject : public bcl::StaticMap<detail::ExampleObject::Text> {
-//   static constexpr detail::ExampleObject::Text Text =
-//     detail::ExampleObject::Text();
-// };
-// template<> struct json::Traits<ExampleObject> :
-//   public json::Traits<bcl::StaticMap<::detail::ExampleObject::Text>> {};
-//
-// The previous code defines some JSON object ExmpaleObject with a single field
-// Text. Use ExampleObject Obj; Obj[ExampleObject::Text] to access its value.
-// The following code is parsed JSON string {"Text":"Hellow World!"} and prints
-// it to STDOUT.
-//
-// json::Parser<> P("{\"Test\":\"Hellow World!\"}");
-// ExampelObject O;
-// if (!P.parse<ExampelObject>(O)) {
-//   for (auto &Err : P.errors())
-//     std::cerr << Err << "\n";
-//   if (P.errors().internal_size() > 0)
-//     std::cerr << "json error: " << P.errors().internal_size() <<
-//       " internal errors\n";
-//   } else {
-//     std::cout << O[ExampelObject::Text] << "\n";
-//   }
-//
-// The other usage way is inherit ExampleObject from json::Object also. In this
-// case it is possible to do as follows:
-// json::Parser<ExampleObject> P("{\"Test\":\"Hellow World!\"}");
-// auto O = P.parse();
-// if (O && O.is<ExampleObject>())
-//   std::cout << O->as<ExampleObject>()[ExampelObject::Text] << "\n";
-//
-// Even simpler example is the following one.
-// json::Parser<> P("{\"0:\":1,\"1\":2}");
-// int * Array;
-// P.parse(Array);
-// for (int I = 0; I < 2; ++I)
-//   std::cout << Array[I] << ' ';
-//
+// 1. The simplest example is:
+// \code
+//   json::Parser<> P(R"j({"0":1, "1":2})j");
+//   int * Array;
+//   P.parse(Array);
+//   for (int I = 0; I < 2; ++I)
+//     std::cout << Array[I] << ' ';
+// \endcode
 // An output is: 1 2.
 //
-// To uparse JSON object O use the following code:
-// String JSON = Parser<ExampleObject>::unparse(O);
+// 2. The following code is parsed JSON string "{\"Name\": "Jon", \"Age\": 1}"
+// and prints it to STDOUT. Use Human Obj; Obj[Human::Name] to access a name.
+// \code
+//   JSON_OBJECT_BEGIN(Human)
+//   JSON_OBJECT_PAIR_2(Human, Name, std::string, Age, unsigned)
+//   JSON_OBJECT_END(Human)
+//   JSON_DEFAULT_TRAITS(::, Human)
+//
+//   json::Parser<> P(R"j({"Name": "Jon", "Age": 1})j");
+//   Human O;
+//   if (P.parse<Human>(O)) {
+//     std::cout << O[Human::Name] << ":" << O[Human::Age] << std::endl;
+//
+// 3. If JSON string contains identifier a parse can determine how to parse
+// a specified string. Identifier is a pair of "name" and a value,
+// for example "Human" in a JSON string.
+// \code
+//   JSON_OBJECT_BEGIN(Human)
+//   JSON_OBJECT_ROOT_PAIR_2(Human, Name, std::string, Age, unsigned)
+//     Human() : JSON_INIT_ROOT {}
+//   JSON_OBJECT_END(Human)
+//   JSON_DEFAULT_TRAITS(::, Human)
+//
+//   JSON_OBJECT_BEGIN(Dog)
+//   JSON_OBJECT_ROOT_PAIR(Dog, Name, std::string)
+//   JSON_OBJECT_END(Dog)
+//   JSON_DEFAULT_TRAITS(::, Dog)
+//
+//   json::Parser<Humna, Dog> P(R"j({"name": "Human", "Name": "Jon", "Age": 1})j");
+//   auto O = P.parse();
+//   if (O && O.is<Human>()) {
+//     Human &OH = O->as<Humna>();
+//     std::cout << OH[Human::Name] << OH[Human::Age] << std::endl;
+//   }
+// \endcode
+// Note, that JSON_OBJECT_ROOT_PAIR should be used instead of JSON_OBJECT_PAIR.
+// It is also necessary to add at least default constructor and use
+// JSON_INIT_ROOT in constructor definition.
+//
+// 4. It is also possible to add other constructors and typedefs for value types
+// and define an object in a namespace:
+// \code
+// namespace People {
+//   JSON_OBJECT_BEGIN(Human)
+//   JSON_OBJECT_ROOT_PAIR_2(Human, Name, Age)
+//     Human(const std::string &N, unsigned A) :
+//       JSON_INIT(N, A), JSON_INIT_ROOT {}
+//     using NameTy = JSON_VALUE_TYPE(Human, Name);
+//     using AgeTy = JSON_VALUE_TYPE(Human, Age);
+//   JSON_OBJECT_END(::, Human)
+// }
+// JSON_DEFAULT_TRAITS(People::, Human)
+// \endcode
+//
+// 5. If there were errors while a string has been parsed it is possible to
+// investigate these errors.
+// \code
+//   if (!P.parse<Human>(O)) {
+//     for (auto &Err : P.errors())
+//       std::cerr << Err << "\n";
+//     if (P.errors().internal_size() > 0)
+//       std::cerr << "json error: " << P.errors().internal_size() <<
+//       " internal errors\n";
+//   }
+// 6. To unparse JSON object O use the following code:
+// \code
+//   // Do not add identifier ("name": "Human") to the result.
+//   // This works in case of sub-object (JSON_OBJECT_PAIR was used instead of
+//   // JSON_OBJECT_ROOT_PAIR) and in case of top-level objects.
+//   Human O;
+//   json::Parser<Human>::unparse(O);
+//
+//   // Add identifier to the result. This works only in case of top-level
+//   // objects.
+//   Human O;
+//   json::Parser<Human>::unparseAsObject(O);
+//
+//   // Add identifier to the result. This works only in case of top-level
+//   // objects.
+//   Human OH;
+//   Object &O = OH;
+//   Parser<Human>::unparse(O);
+// \endcode
+//
+// 7. If you want to have more opportunities to customize JSON-object definition
+// it is possible to define new object in the following way:
+// \code
+//   // Let us begin description of a JSON-object 'Human' in a global namespace.
+//   JSON_OBJECT_BEGIN(Human)
+//     // The object contains two name-value pairs which represents human name
+//     // and its age. Here we specify type of a value in each pair.
+//     JSON_VALUE(Name, std::string)
+//     JSON_VALUE(Age, unsigned)
+//
+//     // Now, we specify list of all name-value pairs which should be stored
+//     // in JSON. We use JSON_OBJECT_ROOT to indicate that the current object
+//     // is top-level object. If we want to use this object as a sub-object
+//     // only we can use JSON_OBJECT instead.
+//     JSON_OBJECT_ROOT(Human, Name, Age)
+//
+//     // Now, we specify name-value pairs which can be accessed in C++ code in
+//     // the following way Obj[Human::Name] where 'Obj' has type 'Human'.
+//     JSON_ACCESS(Human, Name)
+//     JSON_ACCESS(Human, Age)
+//
+//     // Arbitrary C++ code can be written here. It becomes a part of
+//     // the Human class. For example, it is possible to add constructor.
+//     // Attention, JSON_INIT_ROOT must be always used in case of
+//     // top-level objects! It is necessary to use it in any constructors
+//     // of a top-level objects (including default).
+//     // So, top-level object can not have an implicit default constructor.
+//     // Hence, a simplest way to define constructor of a top-level object is
+//     // 'Human() : JSON_INIT_ROOT {}'.
+//     // Attention, do not use JSON_INIT_ROOT in case of sub-objects!
+//     Human(const std::string &N, unsigned A) :
+//       JSON_INIT(N, A), JSON_INIT_ROOT {}
+//
+//     // It is also possible to use type of a value in a name-value pair.
+//     using NameTy = JSON_VALUE_TYPE(Human, Name);
+//     using AgeTy = JSON_VALUE_TYPE(Human, Age);
+//
+//   // Here, we finalize description of objects.
+//   JSON_OBJECT_END(Human)
+//   // An finally, it is necessary to describe how the object should be
+//   // parsed/unparsed. Here we use default capabilities, however, it could be
+//   // also customized manually.
+//   JSON_DEFAULT_TRAITS(::, Human)
+// \endcode
+//
+// 8. It is also possible to define JSON-object manually.
+// \code
+//   namespace detail {
+//   struct ExampleObject {
+//     struct Text { TO_TEXT(name, "Text") typedef const char *  ValueType; };
+//   }
+//   struct ExampleObject : public bcl::StaticMap<detail::ExampleObject::Text> {
+//     static constexpr detail::ExampleObject::Text Text =
+//       detail::ExampleObject::Text();
+//   };
+//   template<> struct json::Traits<ExampleObject> :
+//     public json::Traits<bcl::StaticMap<::detail::ExampleObject::Text>> {};
+// \endcode
+// The previous code defines some JSON object ExmpaleObject with a single field
+// Text.
 //===----------------------------------------------------------------------===//
 
 #ifndef BCL_JSON_H
@@ -128,6 +238,60 @@
 #define JSON_ERROR_8 "target object type does not support duplicate of keys"
 #define JSON_ERROR_9 "illegal value"
 #define JSON_ERROR(C) C, JSON_ERROR_##C
+
+#define JSON_OBJECT_BEGIN(Object_) \
+namespace json_ { struct Object_##Impl {
+
+/// Provides static name() method which.
+#define JSON_NAME(Name) \
+static inline const std::string & \
+name() { static const std::string N(#Name); return N;}
+
+///\brief Specifies a way to access a value of a JSON name-value pari.
+///
+/// Usage example:
+///   Object_ Val;
+///   Val[Object_::Name__] = ...
+#define JSON_ACCESS(Object_, Name_) \
+static constexpr json_::Object_##Impl::Name_ Name_ \
+= json_::Object_##Impl::Name_();
+
+/// Specifies a JSON name-value pair. Instead of a concrete value its type should
+/// be specified.
+#define JSON_VALUE(Name_, Type_) \
+struct Name_ { JSON_NAME(Name_) using ValueType = Type_; };
+
+/// Defines structure of a sub-object.
+#define JSON_OBJECT(Object_, ...) \
+  using Base = bcl::StaticMap<__VA_ARGS__>; }; } \
+struct Object_ : public json_::Object_##Impl::Base {
+
+/// Defines structure of a top-level object.
+#define JSON_OBJECT_ROOT(Object_, ...) \
+  using Base = bcl::StaticMap<__VA_ARGS__>; }; } \
+struct Object_ : \
+  public json_::Object_##Impl::Base, public ::json::Object { \
+  JSON_NAME(Object_)
+
+/// Initializes object with a list of values.
+#define JSON_INIT(Object_, ...) json_::Object_##Impl::Base(__VA_ARGS__)
+
+/// Initializes top-level object.
+#define JSON_INIT_ROOT ::json::Object(name())
+
+/// Type of a value with name Name_ in a name-value pair inside object Object_.
+#define JSON_VALUE_TYPE(Object_, Name_) \
+json_::Object_##Impl::Name_::ValueType
+
+/// Ends description of JSON-object.
+#define JSON_OBJECT_END(Object_) };
+
+/// Specifies that a JSON-object should be parsed/unparsed in a default way.
+#define JSON_DEFAULT_TRAITS(namespace_, Object_) \
+namespace json { \
+template<> struct Traits<namespace_ Object_> : \
+  public Traits<namespace_ json_::Object_##Impl::Base> {}; \
+}
 
 namespace json {
 /// This is a base class for all JSON objects which can be obtained when
@@ -1568,4 +1732,89 @@ template<> struct Traits<bcl::Diagnostic> {
   }
 };
 }
+
+//===- Definition of macros which simplifies definition of a JSON-object --===//
+
+#define JSON_VALUE_2(Name_1_, Type_1_, Name_2_, Type_2_) \
+  JSON_VALUE(Name_1_, Type_1_) \
+  JSON_VALUE(Name_2_, Type_2_)
+#define JSON_VALUE_3(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_) \
+  JSON_VALUE(Name_1_, Type_1_) \
+  JSON_VALUE_2(Name_2_, Type_2_, Name_3_, Type_3_)
+#define JSON_VALUE_4(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_) \
+  JSON_VALUE(Name_1_, Type_1_) \
+  JSON_VALUE_3(Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_)
+#define JSON_VALUE_5(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_) \
+  JSON_VALUE(Name_1_, Type_1_) \
+  JSON_VALUE_4(Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_)
+#define JSON_VALUE_6(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_, Name_6_, Type_6_) \
+  JSON_VALUE(Name_1_, Type_1_) \
+  JSON_VALUE_5(Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_, Name_6_, Type_6_)
+
+#define JSON_ACCESS_2(Object_, Name_1_, Name_2_) \
+  JSON_ACCESS(Object_, Name_1_) \
+  JSON_ACCESS(Object_, Name_2_)
+#define JSON_ACCESS_3(Object_, Name_1_, Name_2_, Name_3_) \
+  JSON_ACCESS(Object_, Name_1_) \
+  JSON_ACCESS_2(Object_, Name_2_, Name_3_)
+#define JSON_ACCESS_4(Object_, Name_1_, Name_2_, Name_3_, Name_4_) \
+  JSON_ACCESS(Object_, Name_1_) \
+  JSON_ACCESS_3(Object_, Name_2_, Name_3_, Name_4_)
+#define JSON_ACCESS_5(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_) \
+  JSON_ACCESS(Object_, Name_1_) \
+  JSON_ACCESS_4(Object_, Name_2_, Name_3_, Name_4_, Name_5_)
+#define JSON_ACCESS_6(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_, Name_6_) \
+  JSON_ACCESS(Object_, Name_1_) \
+  JSON_ACCESS_5(Object_, Name_2_, Name_3_, Name_4_, Name_5_, Name_6_)
+
+#define JSON_OBJECT_PAIR(Object_, Name_, Type_) \
+  JSON_VALUE(Name_, Type_) \
+  JSON_OBJECT(Object_, Name_) \
+  JSON_ACCESS(Object_, Name_)
+#define JSON_OBJECT_PAIR_2(Object_, Name_1_, Type_1_, Name_2_, Type_2_) \
+  JSON_VALUE_2(Name_1_, Type_1_, Name_2_, Type_2_) \
+  JSON_OBJECT(Object_, Name_1_, Name_2_) \
+  JSON_ACCESS_2(Object_, Name_1_, Name_2_)
+#define JSON_OBJECT_PAIR_3(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_) \
+  JSON_VALUE_3(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_) \
+  JSON_OBJECT(Object_, Name_1_, Name_2_, Name_3_) \
+  JSON_ACCESS_3(Object_, Name_1_, Name_2_, Name_3_)
+#define JSON_OBJECT_PAIR_4(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_) \
+  JSON_VALUE_4(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_) \
+  JSON_OBJECT(Object_, Name_1_, Name_2_, Name_3_, Name_4_) \
+  JSON_ACCESS_4(Object_, Name_1_, Name_2_, Name_3_, Name_4_)
+#define JSON_OBJECT_PAIR_5(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_) \
+  JSON_VALUE_5(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_) \
+  JSON_OBJECT(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_) \
+  JSON_ACCESS_5(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_)
+#define JSON_OBJECT_PAIR_6(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_, Name_6_, Type_6_) \
+  JSON_VALUE_6(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_, Name_6_, Type_6_) \
+  JSON_OBJECT(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_, Name_6_) \
+  JSON_ACCESS_6(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_, Name_6_)
+
+#define JSON_OBJECT_ROOT_PAIR(Object_, Name_, Type_) \
+  JSON_VALUE(Name_, Type_) \
+  JSON_OBJECT_ROOT(Object_, Name_) \
+  JSON_ACCESS(Object_, Name_)
+#define JSON_OBJECT_ROOT_PAIR_2(Object_, Name_1_, Type_1_, Name_2_, Type_2_) \
+  JSON_VALUE_2(Name_1_, Type_1_, Name_2_, Type_2_) \
+  JSON_OBJECT_ROOT(Object_, Name_1_, Name_2_) \
+  JSON_ACCESS_2(Object_, Name_1_, Name_2_)
+#define JSON_OBJECT_ROOT_PAIR_3(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_) \
+  JSON_VALUE_3(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_) \
+  JSON_OBJECT_ROOT(Object_, Name_1_, Name_2_, Name_3_) \
+  JSON_ACCESS_3(Object_, Name_1_, Name_2_, Name_3_)
+#define JSON_OBJECT_ROOT_PAIR_4(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_) \
+  JSON_VALUE_4(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_) \
+  JSON_OBJECT_ROOT(Object_, Name_1_, Name_2_, Name_3_, Name_4_) \
+  JSON_ACCESS_4(Object_, Name_1_, Name_2_, Name_3_, Name_4_)
+#define JSON_OBJECT_ROOT_PAIR_5(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_) \
+  JSON_VALUE_5(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_) \
+  JSON_OBJECT_ROOT(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_) \
+  JSON_ACCESS_5(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_)
+#define JSON_OBJECT_ROOT_PAIR_6(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_, Name_6_, Type_6_) \
+  JSON_VALUE_6(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_, Name_6_, Type_6_) \
+  JSON_OBJECT_ROOT(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_, Name_6_) \
+  JSON_ACCESS_6(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_, Name_6_)
+
 #endif// TSAR_REQUESTS_H
