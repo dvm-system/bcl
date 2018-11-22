@@ -219,6 +219,7 @@
 
 #include "cell.h"
 #include "Diagnostic.h"
+#include "utility.h"
 #include <cctype>
 #include <map>
 #include <memory>
@@ -1736,20 +1737,20 @@ template<> struct Traits<bcl::Diagnostic> {
 //===- Definition of macros which simplifies definition of a JSON-object --===//
 
 #define JSON_VALUE_2(Name_1_, Type_1_, Name_2_, Type_2_) \
-  JSON_VALUE(Name_1_, Type_1_) \
-  JSON_VALUE(Name_2_, Type_2_)
+  JSON_VALUE(Name_1_, BCL_JOIN(Type_1_)) \
+  JSON_VALUE(Name_2_, BCL_JOIN(Type_2_))
 #define JSON_VALUE_3(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_) \
-  JSON_VALUE(Name_1_, Type_1_) \
-  JSON_VALUE_2(Name_2_, Type_2_, Name_3_, Type_3_)
+  JSON_VALUE(Name_1_, BCL_JOIN(Type_1_)) \
+  JSON_VALUE_2(Name_2_, BCL_JOIN(Type_2_), Name_3_, BCL_JOIN(Type_3_))
 #define JSON_VALUE_4(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_) \
-  JSON_VALUE(Name_1_, Type_1_) \
-  JSON_VALUE_3(Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_)
+  JSON_VALUE(Name_1_, BCL_JOIN(Type_1_)) \
+  JSON_VALUE_3(Name_2_, BCL_JOIN(Type_2_), Name_3_, BCL_JOIN(Type_3_), Name_4_, BCL_JOIN(Type_4_))
 #define JSON_VALUE_5(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_) \
-  JSON_VALUE(Name_1_, Type_1_) \
-  JSON_VALUE_4(Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_)
+  JSON_VALUE(Name_1_, BCL_JOIN(Type_1_)) \
+  JSON_VALUE_4(Name_2_, BCL_JOIN(Type_2_), Name_3_, BCL_JOIN(Type_3_), Name_4_, BCL_JOIN(Type_4_), Name_5_, BCL_JOIN(Type_5_))
 #define JSON_VALUE_6(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_, Name_6_, Type_6_) \
-  JSON_VALUE(Name_1_, Type_1_) \
-  JSON_VALUE_5(Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_, Name_6_, Type_6_)
+  JSON_VALUE(Name_1_, BCL_JOIN(Type_1_)) \
+  JSON_VALUE_5(Name_2_, BCL_JOIN(Type_2_), Name_3_, BCL_JOIN(Type_3_), Name_4_, BCL_JOIN(Type_4_), Name_5_, BCL_JOIN(Type_5_), Name_6_, BCL_JOIN(Type_6_))
 
 #define JSON_ACCESS_2(Object_, Name_1_, Name_2_) \
   JSON_ACCESS(Object_, Name_1_) \
@@ -1768,27 +1769,27 @@ template<> struct Traits<bcl::Diagnostic> {
   JSON_ACCESS_5(Object_, Name_2_, Name_3_, Name_4_, Name_5_, Name_6_)
 
 #define JSON_OBJECT_PAIR(Object_, Name_, Type_) \
-  JSON_VALUE(Name_, Type_) \
+  JSON_VALUE(Name_, BCL_JOIN(Type_)) \
   JSON_OBJECT(Object_, Name_) \
   JSON_ACCESS(Object_, Name_)
 #define JSON_OBJECT_PAIR_2(Object_, Name_1_, Type_1_, Name_2_, Type_2_) \
-  JSON_VALUE_2(Name_1_, Type_1_, Name_2_, Type_2_) \
+  JSON_VALUE_2(Name_1_, BCL_JOIN(Type_1_), Name_2_, BCL_JOIN(Type_2_)) \
   JSON_OBJECT(Object_, Name_1_, Name_2_) \
   JSON_ACCESS_2(Object_, Name_1_, Name_2_)
 #define JSON_OBJECT_PAIR_3(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_) \
-  JSON_VALUE_3(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_) \
+  JSON_VALUE_3(Name_1_, BCL_JOIN(Type_1_), Name_2_, BCL_JOIN(Type_2_), Name_3_, BCL_JOIN(Type_3_)) \
   JSON_OBJECT(Object_, Name_1_, Name_2_, Name_3_) \
   JSON_ACCESS_3(Object_, Name_1_, Name_2_, Name_3_)
 #define JSON_OBJECT_PAIR_4(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_) \
-  JSON_VALUE_4(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_) \
+  JSON_VALUE_4(Name_1_, BCL_JOIN(Type_1_), Name_2_, BCL_JOIN(Type_2_), Name_3_, BCL_JOIN(Type_3_), Name_4_, BCL_JOIN(Type_4_)) \
   JSON_OBJECT(Object_, Name_1_, Name_2_, Name_3_, Name_4_) \
   JSON_ACCESS_4(Object_, Name_1_, Name_2_, Name_3_, Name_4_)
 #define JSON_OBJECT_PAIR_5(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_) \
-  JSON_VALUE_5(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_) \
+  JSON_VALUE_5(Name_1_, BCL_JOIN(Type_1_), Name_2_, BCL_JOIN(Type_2_), Name_3_, BCL_JOIN(Type_3_), Name_4_, BCL_JOIN(Type_4_), Name_5_, BCL_JOIN(Type_5_)) \
   JSON_OBJECT(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_) \
   JSON_ACCESS_5(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_)
 #define JSON_OBJECT_PAIR_6(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_, Name_6_, Type_6_) \
-  JSON_VALUE_6(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_, Name_6_, Type_6_) \
+  JSON_VALUE_6(Name_1_, BCL_JOIN(Type_1_), Name_2_, BCL_JOIN(Type_2_), Name_3_, BCL_JOIN(Type_3_), Name_4_, BCL_JOIN(Type_4_), Name_5_, BCL_JOIN(Type_5_), Name_6_, BCL_JOIN(Type_6_)) \
   JSON_OBJECT(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_, Name_6_) \
   JSON_ACCESS_6(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_, Name_6_)
 
@@ -1797,23 +1798,23 @@ template<> struct Traits<bcl::Diagnostic> {
   JSON_OBJECT_ROOT(Object_, Name_) \
   JSON_ACCESS(Object_, Name_)
 #define JSON_OBJECT_ROOT_PAIR_2(Object_, Name_1_, Type_1_, Name_2_, Type_2_) \
-  JSON_VALUE_2(Name_1_, Type_1_, Name_2_, Type_2_) \
+  JSON_VALUE_2(Name_1_, BCL_JOIN(Type_1_), Name_2_, BCL_JOIN(Type_2_)) \
   JSON_OBJECT_ROOT(Object_, Name_1_, Name_2_) \
   JSON_ACCESS_2(Object_, Name_1_, Name_2_)
 #define JSON_OBJECT_ROOT_PAIR_3(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_) \
-  JSON_VALUE_3(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_) \
+  JSON_VALUE_3(Name_1_, BCL_JOIN(Type_1_), Name_2_, BCL_JOIN(Type_2_), Name_3_, BCL_JOIN(Type_3_)) \
   JSON_OBJECT_ROOT(Object_, Name_1_, Name_2_, Name_3_) \
   JSON_ACCESS_3(Object_, Name_1_, Name_2_, Name_3_)
 #define JSON_OBJECT_ROOT_PAIR_4(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_) \
-  JSON_VALUE_4(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_) \
+  JSON_VALUE_4(Name_1_, BCL_JOIN(Type_1_), Name_2_, BCL_JOIN(Type_2_), Name_3_, BCL_JOIN(Type_3_), Name_4_, BCL_JOIN(Type_4_)) \
   JSON_OBJECT_ROOT(Object_, Name_1_, Name_2_, Name_3_, Name_4_) \
   JSON_ACCESS_4(Object_, Name_1_, Name_2_, Name_3_, Name_4_)
 #define JSON_OBJECT_ROOT_PAIR_5(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_) \
-  JSON_VALUE_5(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_) \
+  JSON_VALUE_5(Name_1_, BCL_JOIN(Type_1_), Name_2_, BCL_JOIN(Type_2_), Name_3_, BCL_JOIN(Type_3_), Name_4_, BCL_JOIN(Type_4_), Name_5_, BCL_JOIN(Type_5_)) \
   JSON_OBJECT_ROOT(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_) \
   JSON_ACCESS_5(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_)
 #define JSON_OBJECT_ROOT_PAIR_6(Object_, Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_, Name_6_, Type_6_) \
-  JSON_VALUE_6(Name_1_, Type_1_, Name_2_, Type_2_, Name_3_, Type_3_, Name_4_, Type_4_, Name_5_, Type_5_, Name_6_, Type_6_) \
+  JSON_VALUE_6(Name_1_, BCL_JOIN(Type_1_), Name_2_, BCL_JOIN(Type_2_), Name_3_, BCL_JOIN(Type_3_), Name_4_, BCL_JOIN(Type_4_), Name_5_, BCL_JOIN(Type_5_), Name_6_, BCL_JOIN(Type_6_)) \
   JSON_OBJECT_ROOT(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_, Name_6_) \
   JSON_ACCESS_6(Object_, Name_1_, Name_2_, Name_3_, Name_4_, Name_5_, Name_6_)
 
