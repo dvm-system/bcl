@@ -38,6 +38,8 @@ namespace bcl {
 /// \tparam Ty Type of a value wrapper points to. It should be constructible
 /// from *ItrTy, DataTy pair.
 /// \tparam PtrTy Type of a pointer to a type of a value wrapper points to.
+/// Note, that there is no `operator->` method and `operator*` return a value
+/// instead of a reference.
 template<class ItrTy, class DataTy, class Ty, class PtrTy = Ty *>
 struct IteratorDataAdaptor : public std::iterator<
       typename std::iterator_traits<ItrTy>::iterator_category,
@@ -61,7 +63,6 @@ struct IteratorDataAdaptor : public std::iterator<
   }
 
   Ty operator*() const { return Ty(*mItr, mData); }
-  PtrTy operator->() const { return &operator*(); }
 
   ItrTy & getIterator() noexcept { return mItr; }
   const ItrTy & getIterator() const noexcept { return mItr; }
