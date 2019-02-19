@@ -114,7 +114,7 @@
 //   JSON_OBJECT_BEGIN(Human)
 //   JSON_OBJECT_ROOT_PAIR_2(Human, Name, Age)
 //     Human(const std::string &N, unsigned A) :
-//       JSON_INIT(N, A), JSON_INIT_ROOT {}
+//       JSON_INIT(Human, N, A), JSON_INIT_ROOT {}
 //     using NameTy = JSON_VALUE_TYPE(Human, Name);
 //     using AgeTy = JSON_VALUE_TYPE(Human, Age);
 //   JSON_OBJECT_END(::, Human)
@@ -201,7 +201,14 @@
 // \code
 //   namespace detail {
 //   struct ExampleObject {
-//     struct Text { TO_TEXT(name, "Text") typedef const char *  ValueType; };
+//     struct Text {
+//       static inline const std::string & name() {
+//         static const std::string N("Text");
+//         return N;
+//       }
+//       using ValueType = const char *;
+//     };
+//   };
 //   }
 //   struct ExampleObject : public bcl::StaticMap<detail::ExampleObject::Text> {
 //     static constexpr detail::ExampleObject::Text Text =
