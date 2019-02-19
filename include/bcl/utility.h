@@ -199,6 +199,12 @@ template<class... Args> inline constexpr std::size_t size_of() {
   return detail::SizeOfImp<Args...>::size_of();
 }
 
+/// Returns number of elements in an array.
+template <class T, std::size_t N>
+constexpr inline size_t array_sizeof(T(&)[N]) {
+  return N;
+}
+
 /// Applies a specified function to each value in the empty pack (this is stub).
 template<class Function> inline void staticForeach(Function &&F) {}
 
