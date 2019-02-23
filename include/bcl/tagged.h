@@ -214,9 +214,15 @@ struct tagged_pair :
       std::is_constructible<
         std::pair<typename Tagged1::type, typename Tagged2::type>,
           ArgTy &&>::value>::type>
-  tagged_pair & operator=(ArgTy&& Arg) noexcept(noexcept(
-    std::pair<typename Tagged1::type, typename Tagged2::type>::
-      operator=(std::forward<ArgTy>(Arg)))) {
+  tagged_pair & operator=(ArgTy&& Arg)
+  /// TODO (kaniandr@gmail.com: is it possible to use noexcept here
+  /// (see description of this issue in convertible_pair.h).
+#ifdef _MSC_VER
+    noexcept(noexcept(
+      std::pair<typename Tagged1::type, typename Tagged2::type>::
+        operator=(std::forward<ArgTy>(Arg))))
+#endif
+  {
     return static_cast<tagged_pair &>(
       std::pair<typename Tagged1::type, typename Tagged2::type>::
         operator=(std::forward<ArgTy>(Arg)));

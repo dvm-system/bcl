@@ -42,13 +42,17 @@ struct convertible_pair : public std::pair<FirstTy, SecondTy> {
   template<class ArgTy,
     class = typename std::enable_if<
       std::is_constructible<PairTy, ArgTy &&>::value>::type>
-  convertible_pair & operator=(ArgTy&& Arg) {
+  convertible_pair & operator=(ArgTy&& Arg)
   // TODO (kaniandr@gmail.com): add 'noexcept'. Is it possible to use noexcept
   // operator here in a portable way. The following is working on MS VS:
   // 'noexcept(noexcept(PairTy::operator=(std::forward<ArgTy>(Arg))))', however
   // it does not work in GCC. In case of GCC we can use operator= without
   // parameter. However, it seems that it does not work on some OS, for example
   // on FreeBSD.
+#ifdef _MSC_VER
+  noexcept(noexcept(PairTy::operator=(std::forward<ArgTy>(Arg))))
+#endif
+  {
     return static_cast<convertible_pair &>(
         PairTy::operator=(std::forward<ArgTy>(Arg)));
   }
