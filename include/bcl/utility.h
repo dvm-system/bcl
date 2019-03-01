@@ -302,17 +302,17 @@ template<typename T> void swapMemory(T &LObj, T &RObj) {
 /// return true on success.
 template<class FirstT, class SecondT, class T> bool shrinkPair(
     const FirstT &First, const SecondT &Second, T &Out) {
-  char RawFirst[sizeof FirstT], RawSecond[sizeof SecondT];
-  constexpr auto SizeOfT = sizeof T;
+  char RawFirst[sizeof(FirstT)], RawSecond[sizeof(SecondT)];
+  constexpr auto SizeOfT = sizeof(T);
   constexpr auto HalfSizeOfT = SizeOfT / 2;
-  std::memset(RawFirst, 0, sizeof FirstT);
+  std::memset(RawFirst, 0, sizeof(FirstT));
   new(RawFirst) FirstT(First);
-  for (std::size_t I = HalfSizeOfT; I < sizeof FirstT ; ++I)
+  for (std::size_t I = HalfSizeOfT; I < sizeof(FirstT) ; ++I)
     if (RawFirst[I] != 0)
       return false;
-  std::memset(RawSecond, 0, sizeof SecondT);
+  std::memset(RawSecond, 0, sizeof(SecondT));
   new(RawSecond) SecondT(Second);
-  for (std::size_t I = HalfSizeOfT; I < sizeof SecondT; ++I)
+  for (std::size_t I = HalfSizeOfT; I < sizeof(SecondT); ++I)
     if (RawSecond[I] != 0)
       return false;
   std::memmove((char *)&Out, RawFirst, HalfSizeOfT);
@@ -331,17 +331,17 @@ template<class FirstT, class SecondT, class T> bool shrinkPair(
 /// type `T`.
 template<class FirstT, class SecondT, class T>
 void restoreShrinkedPair(const T &Data, FirstT &First, SecondT &Second) {
-  constexpr auto SizeOfT = sizeof T;
+  constexpr auto SizeOfT = sizeof(T);
   constexpr auto HalfSizeOfT = SizeOfT / 2;
-  static_assert(sizeof FirstT >= HalfSizeOfT,
+  static_assert(sizeof(FirstT) >= HalfSizeOfT,
     "Too small target type of a first value!");
-  static_assert(sizeof SecondT >= HalfSizeOfT ,
+  static_assert(sizeof(SecondT) >= HalfSizeOfT ,
     "Too small target type of a second value!");
   char RawData[SizeOfT];
   new (RawData) T(Data);
-  std::memset(&First, 0, sizeof FirstT);
+  std::memset(&First, 0, sizeof(FirstT));
   std::memmove(&First, RawData, HalfSizeOfT);
-  std::memset(&Second, 0, sizeof SecondT);
+  std::memset(&Second, 0, sizeof(SecondT));
   std::memmove(&Second, RawData + HalfSizeOfT, HalfSizeOfT);
 }
 
