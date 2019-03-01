@@ -91,7 +91,7 @@ constexpr unsigned long long operator "" _b() {
 }
 
 /// Returns a number of less significant digits equal to zero in a value which
-/// is represented in a number system with the a given base.
+/// is represented in a number system with the given base.
 template<class T>
 inline constexpr std::size_t numberOfLessZeros(T Value, T Base) {
   static_assert(std::is_integral<T>::value, "T must be an integral type!");
@@ -99,7 +99,7 @@ inline constexpr std::size_t numberOfLessZeros(T Value, T Base) {
 }
 
 /// Returns a number of digits in a value which is represented in a number
-/// system with the a given base.
+/// system with the given base.
 template<class T>
 inline constexpr std::size_t numberOfDigits(T Value, T Base) {
   static_assert(std::is_integral<T>::value, "T must be an integral type!");
