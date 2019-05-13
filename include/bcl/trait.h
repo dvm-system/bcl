@@ -713,8 +713,11 @@ public:
   template<class Trait> void unset() {
     auto constexpr Key = mTD.template getKey<Trait>();
     auto I = mValues.find(Key);
-    if (I != mValues.end() || I->second)
-      delete reinterpret_cast<TraitDataTy<Trait>*>(I->second);
+    if (I != mValues.end()) {
+      if (I->second)
+        delete reinterpret_cast<TraitDataTy<Trait>*>(I->second);
+      mValues.erase(I);
+    }
     mTD.template unset<Trait>();
   }
 
