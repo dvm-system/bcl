@@ -991,6 +991,33 @@ private:
 };
 
 template<> struct Traits<std::string> {
+  inline static String unescape(const String &Str) {
+    if (Str.size() < 2)
+      return Str;
+    std::string Res;
+    Res.reserve(Str.length());
+    auto I = Str.begin(), EI = Str.end() - 1;
+    while (I != EI) {
+      if (*I != '\\') {
+        Res += *I;
+        ++I;
+        continue;
+      }
+      switch (*(++I)) {
+        case 'n': Res += "\n"; break;
+        case 't': Res += "\t"; break;
+        case 'v': Res += "\v"; break;
+        case 'f': Res += "\f"; break;
+        case 'r': Res += "\r"; break;
+        case '"': case '\\': Res += *I; break;
+        default: continue;
+      }
+      ++I;
+    }
+    if (I == EI)
+      Res += Str.back();
+    return Res;
+  }
   inline static Position escape(String &JSON, Position Pos) {
     switch (JSON[Pos]) {
       case '\n': JSON.replace(Pos, 1, "n"); break;
@@ -1007,7 +1034,8 @@ template<> struct Traits<std::string> {
   inline static bool parse(std::string &Dest, Lexer &Lex) noexcept {
     try {
       auto Value = Lex.discardQuote();
-      Dest = Lex.json().substr(Value.first, Value.second - Value.first + 1);
+      Dest = unescape(
+        Lex.json().substr(Value.first, Value.second - Value.first + 1));
     }
     catch (...) {
       return false;
@@ -1025,9 +1053,11 @@ template<> struct Traits<std::string> {
 template<> struct Traits<char> {
   inline static bool parse(char &Dest, Lexer &Lex) noexcept {
     auto Value = Lex.discardQuote();
-    if (Value.first != Value.second)
+    auto Tmp = Traits<std::string>::unescape(
+      Lex.json().substr(Value.first, Value.second - Value.first + 1));
+    if (Tmp.size() != 1)
       return false;
-    Dest = Lex.json()[Value.first];
+    Dest = Lex.json()[Tmp.front()];
     return true;
   }
   inline static void unparse(String &JSON, char Obj) {
@@ -1210,8 +1240,10 @@ template<> struct Traits<char *> {
     } else {
       try {
         auto Value = Lex.discardQuote();
-        TmpDest = new char[Value.second - Value.first + 2];
-        Lex.json().copy(TmpDest, Value.second - Value.first + 1, Value.first);
+        auto Unescaped = Traits<std::string>::unescape(
+          Lex.json().substr(Value.first, Value.second - Value.first + 1));
+        TmpDest = new char[Unescaped.length()];
+        Unescaped.copy(TmpDest, Unescaped.length());
         TmpDest[Value.second - Value.first + 1] = '\0';
       }
       catch (...) {
