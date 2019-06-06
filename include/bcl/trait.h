@@ -711,7 +711,7 @@ public:
 
   /// Unset all specified traits.
   template<class Trait> void unset() {
-    auto constexpr Key = mTD.template getKey<Trait>();
+    auto constexpr Key = TraitDescriptor::template getKey<Trait>();
     auto I = mValues.find(Key);
     if (I != mValues.end()) {
       if (I->second)
@@ -750,8 +750,7 @@ public:
     if (!mValues.empty())
       mTD.template for_each_conflict<Trait>(ConflictsResolver(&mValues));
     mTD.template set<Trait>();
-    mValues.insert(
-      std::make_pair(mTD.template getKey<Trait>(), reinterpret_cast<void*>(T)));
+    mValues.insert(std::make_pair(Key, reinterpret_cast<void*>(T)));
   }
 
   /// \brief Returns description of a specified trait or nullptr.
@@ -787,7 +786,7 @@ public:
   /// If the trait has been set it will not be unset in descriptor but
   /// description will be removed from this set.
   template<class Trait> TraitDataTy<Trait> * release() {
-    auto constexpr Key = mTD.template getKey<Trait>();
+    auto constexpr Key = TraitDescriptor::template getKey<Trait>();
     auto I = mValues.find(Key);
     Trait *Result = I == mValues.end() ? nullptr :
       reinterpret_cast<TraitDataTy<Trait>*>(I->second);
