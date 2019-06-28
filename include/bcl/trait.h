@@ -485,6 +485,12 @@ public:
   /// Checks whether all specified traits are set.
   template<class... Traits> bool is() const {
     auto constexpr Keys = joinKey<Traits...>();
+    return !((mTD ^ Keys) & Keys);
+  }
+
+  /// Checks whether at least one of a specified traits is set.
+  template<class... Traits> bool is_any() const {
+    auto constexpr Keys = joinKey<Traits...>();
     return mTD & Keys;
   }
 
@@ -661,9 +667,14 @@ public:
   /// Returns underlying descriptor.
   TraitDescriptor get() const noexcept { return mTD; }
 
-  /// Checks whether a trait is set.
+  /// Checks whether all specified traits are set.
   template<class... Traits> bool is() const {
     return mTD.template is<Traits...>();
+  }
+
+  /// Checks whether at least one of a specified traits is set.
+  template<class... Traits> bool is_any() const {
+    return mTD.template is_any<Traits...>();
   }
 
   /// \brief Executes function for each trait which is set and belongs to a
@@ -900,7 +911,7 @@ inline void unset(Descriptor &Dptr) {
   detail::UnsetFunctor<Descriptor, FirstWhatTy, WhatTy...>::unset(Dptr);
 }
 
-/// Unsets list of traits. This list can be also specified as
+/// Sets list of traits. This list can be also specified as
 /// bcl::TraitDescriptor or bcl::TraitSet.
 template<class FirstWhatTy, class... WhatTy, class Descriptor>
 inline void set(Descriptor &Dptr) {
