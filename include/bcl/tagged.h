@@ -300,5 +300,32 @@ struct tagged_tuple: public std::tuple<typename Taggeds::type...> {
       bcl::index_of<bcl::get_tagged<Tag, Taggeds...>, Taggeds...>()>(*this);
   }
 };
+
+namespace tags {
+namespace detail {
+template<class Ty, class Tags, class... Taggeds>
+struct get_tagged_tuple_impl {
+  using type = typename get_tagged_tuple_impl<Ty, typename Tags::Next,
+    tagged<Ty, typename Tags::Type>, Taggeds...>::type;
+};
+
+template<class Ty, class... Taggeds>
+struct get_tagged_tuple_impl<Ty, TypeList<>, Taggeds...> {
+  using type = tagged_tuple<Taggeds...>;
+};
+}
+
+/// Construct bcl::tagged_tuple which stores values of a type `Ty` with tags
+/// `Tags`.
+template<class Ty, class... Tags>
+struct get_tagged_tuple {
+  using type =
+    typename detail::get_tagged_tuple_impl<Ty, TypeList<Tags...>>::type;
+};
+
+/// Type alias to access constructed bcl::tagged_tuple type.
+template<class Ty, class... Tags>
+using get_tagged_tuple_t = typename get_tagged_tuple<Ty, Tags...>::type;
+}
 }
 #endif//TAGGED_H
