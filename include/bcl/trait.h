@@ -902,6 +902,21 @@ template<class WhereTy> struct SetTraitFunctor {
   template<class Trait> void set(std::false_type) {}
   WhereTy *mWhere;
 };
+
+template<class WhatTy, class WhereTy> struct UpdateTraitFunctor {
+  template<class Trait> void operator()() {
+    update<Trait>(bcl::trait::is_contained<Trait, WhereTy>());
+  }
+  template<class Trait> void update(std::true_type) {
+    if (mWhat->is<Trait>())
+      mWhere->template set<Trait>();
+    else
+      mWhere->template unset<Trait>();
+  }
+  template<class Trait> void update(std::false_type) {}
+  const WhatTy *mWhat;
+  WhereTy *mWhere;
+};
 }
 
 /// Unsets list of traits. This list can be also specified as
@@ -925,6 +940,7 @@ void set(const WhatTy &What, TraitDescriptor<Traits...> &Where) {
   detail::SetTraitFunctor<TraitDescriptor<Traits...>> Functor{ &Where };
   What.for_each(Functor);
 }
+
 /// Sets in `Where` all traits that are set in `What`. Both parameters may be
 /// bcl::TraitDescriptor or bcl::TraitSet.
 template<class WhatTy, class TraitMap, class TraitTaggeds, class... Traits>
@@ -933,6 +949,28 @@ void set(const WhatTy &What,
   detail::SetTraitFunctor<
     TraitSet<TraitDescriptor<Traits...>, TraitMap, TraitTaggeds>> F{ &Where };
   What.for_each(F);
+}
+
+/// Sets in `Where` all traits that are set in `What` and unset traits that are
+/// not set in `What`. Both parameters may be bcl::TraitDescriptor
+/// or bcl::TraitSet.
+template<class WhatTy, class... Traits>
+void update(const WhatTy &What, TraitDescriptor<Traits...> &Where) {
+  detail::UnsetFunctor<WhatTy, TraitDescriptor<Traits...>>
+    Functor{ &What, &Where };
+  What.for_each_available(Functor);
+}
+
+/// Sets in `Where` all traits that are set in `What` and unset traits that are
+/// not set in `What`. Both parameters may be bcl::TraitDescriptor
+/// or bcl::TraitSet.
+template<class WhatTy, class TraitMap, class TraitTaggeds, class... Traits>
+void update(const WhatTy &What,
+    TraitSet<TraitDescriptor<Traits...>, TraitMap, TraitTaggeds> &Where) {
+  detail::UpdateTraitFunctor<
+    WhatTy, TraitSet<TraitDescriptor<Traits...>, TraitMap, TraitTaggeds>>
+      Functor{ &What, &Where };
+  What.for_each_available(Functor);
 }
 }
 
