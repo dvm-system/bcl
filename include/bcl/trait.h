@@ -889,7 +889,7 @@ struct SetFunctor<Descriptor, bcl::TraitDescriptor<Groups...>> {
 template<class Descriptor, class TraitMap, class TraitTaggeds, class... Groups>
 struct SetFunctor<Descriptor,
     bcl::TraitSet<bcl::TraitDescriptor<Groups...>, TraitMap, TraitTaggeds>> {
-  static void set(Descriptor &Dptr) { Dptr.template unset<Groups...>(); }
+  static void set(Descriptor &Dptr) { Dptr.template set<Groups...>(); }
 };
 
 template<class WhereTy> struct SetTraitFunctor {
