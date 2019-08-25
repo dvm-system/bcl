@@ -799,7 +799,7 @@ public:
   template<class Trait> TraitDataTy<Trait> * release() {
     auto constexpr Key = TraitDescriptor::template getKey<Trait>();
     auto I = mValues.find(Key);
-    Trait *Result = I == mValues.end() ? nullptr :
+    auto *Result = I == mValues.end() ? nullptr :
       reinterpret_cast<TraitDataTy<Trait>*>(I->second);
     mValues.erase(I);
     return Result;
@@ -956,7 +956,7 @@ void set(const WhatTy &What,
 /// or bcl::TraitSet.
 template<class WhatTy, class... Traits>
 void update(const WhatTy &What, TraitDescriptor<Traits...> &Where) {
-  detail::UnsetFunctor<WhatTy, TraitDescriptor<Traits...>>
+  detail::UpdateTraitFunctor<WhatTy, TraitDescriptor<Traits...>>
     Functor{ &What, &Where };
   What.for_each_available(Functor);
 }
