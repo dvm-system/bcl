@@ -908,7 +908,7 @@ template<class WhatTy, class WhereTy> struct UpdateTraitFunctor {
     update<Trait>(bcl::trait::is_contained<Trait, WhereTy>());
   }
   template<class Trait> void update(std::true_type) {
-    if (mWhat->is<Trait>())
+    if (mWhat->template is<Trait>())
       mWhere->template set<Trait>();
     else
       mWhere->template unset<Trait>();
