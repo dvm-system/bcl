@@ -716,8 +716,20 @@ public:
   /// \brief Set all specified traits if they have not been set yet.
   ///
   /// If there are values associated with these traits they will not be changed.
-  template<class... Traits> void set() {
-    mTD.template set<Traits...>();
+  /// All values attached to confliected traits will be removed.
+  template<class Trait> void set() {
+    if (!mValues.empty())
+      mTD.template for_each_conflict<Trait>(ConflictsResolver(&mValues));
+    mTD.template set<Trait>();
+  }
+
+  /// \brief Set all specified traits if they have not been set yet.
+  ///
+  /// If there are values associated with these traits they will not be changed.
+  /// All values attached to confliected traits will be removed.
+  template<class First, class Second, class... Traits> void set() {
+    set<First>();
+    set<Second, Traits...>();
   }
 
   /// Unset all specified traits.
