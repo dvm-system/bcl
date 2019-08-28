@@ -323,6 +323,14 @@ struct get_tagged_tuple {
     typename detail::get_tagged_tuple_impl<Ty, TypeList<Tags...>>::type;
 };
 
+/// Construct bcl::tagged_tuple which stores values of a type `Ty` with tags
+/// `Tags`.
+template<class Ty, class... Tags>
+struct get_tagged_tuple<Ty, bcl::TypeList<Tags...>> {
+  using type =
+    typename detail::get_tagged_tuple_impl<Ty, TypeList<Tags...>>::type;
+};
+
 /// Type alias to access constructed bcl::tagged_tuple type.
 template<class Ty, class... Tags>
 using get_tagged_tuple_t = typename get_tagged_tuple<Ty, Tags...>::type;
