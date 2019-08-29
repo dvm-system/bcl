@@ -297,6 +297,16 @@ template<class Type, class... Types>
 struct IsTypeExist<Type, TypeList<Types...>> :
   public is_contained<Type, Types...> {};
 
+/// Pass types from a type list to a specified target type.
+template<template<class... Types> class Target, class TypeList>
+struct ForwardTypeList;
+
+/// Pass types from a type list to a specified target type.
+template<template<class... Types> class Target, class... Types>
+struct ForwardTypeList<Target, TypeList<Types...>> {
+  typedef Target<Types...> Type;
+};
+
 /// Merges two list of types bcl::TypeList.
 template<class LHS, class RHS> struct MergeTypeLists;
 
@@ -338,6 +348,22 @@ template<class TList> struct RemoveDuplicate {
 
 /// Removes duplicates from a bcl::TypeList.
 template<> struct RemoveDuplicate<TypeList<>> { typedef TypeList<> Type; };
+
+/// Remove a specified type from a bcl::TypeList.
+template<class T, class TList> struct RemoveFromTypeList {
+  typedef typename std::conditional<
+    std::is_same<typename TList::Type, T>::value,
+    typename RemoveFromTypeList<T, typename TList::Next>::Type,
+    typename MergeTypeLists<
+      TypeList<typename TList::Type>,
+      typename RemoveFromTypeList<
+        T, typename TList::Next>::Type>::Type>::type Type;
+};
+
+/// Remove a specified type from a bcl::TypeList.
+template<class T> struct RemoveFromTypeList<T, TypeList<>> {
+  typedef TypeList<> Type;
+};
 
 namespace detail {
 /// This implements the bcl::StaticMapConstructor class.

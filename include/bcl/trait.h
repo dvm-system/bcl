@@ -228,10 +228,7 @@ struct BitsToTrait<Trait, First, Groups...> {
 };
 }
 
-/// \brief Finds lists of unions of traits which contain a specified trait.
-///
-/// This provides the type `type` equal to true, bcl::TypeList of TraitUnion and
-/// single traits.
+/// Finds lists of unions of traits which contain a specified trait.
 template<class Trait, class First, class... Groups> struct find_union {
   typedef typename bcl::MergeTypeLists<
     typename find_union<Trait, First>::type,
@@ -258,10 +255,7 @@ struct find_union<Trait, First> {
     bcl::TypeList<TraitUnion<Trait>>, bcl::TypeList<>>::type type;
 };
 
-/// \brief Finds lists of unions of traits which contain a specified trait.
-///
-/// This provides the type `type` equal to true, bcl::TypeList of TraitUnion and
-/// single traits.
+/// Finds lists of unions of traits which contain a specified trait.
 template<class Trait, class... Groups>
 using find_union_t = typename find_union<Trait, Groups...>::type;
 
@@ -858,6 +852,21 @@ struct find_group<Trait,
   TraitSet<TraitDescriptor<Groups...>, TraitMap, TraitTaggeds>> :
     public find_group<Trait, Groups...> {};
 
+/// \brief Finds lists of unions of traits which contain a specified trait.
+///
+/// This is a specialization for a TraitDescriptor<...> class.
+template<class Trait, class... Groups>
+struct find_union<Trait, TraitDescriptor<Groups...>> :
+  public find_union<Trait, Groups...> {};
+
+/// \brief Finds lists of unions of traits which contain a specified trait.
+///
+/// This is a specialization for a TraitSet<...> class.
+template<class Trait, class TraitMap, class TraitTaggeds, class... Groups>
+struct find_union<Trait,
+  TraitSet<TraitDescriptor<Groups...>, TraitMap, TraitTaggeds>> :
+    public find_union<Trait, Groups...> {};
+
 /// \brief Checks if a trait is contained in a group of traits.
 ///
 /// This is a specialization for a TraitDescriptor<...> class.
@@ -930,6 +939,32 @@ template<class WhatTy, class WhereTy> struct UpdateTraitFunctor {
   WhereTy *mWhere;
 };
 }
+
+/// Check whether specified traits is set.
+///
+/// It is convenient to use this class with bcl::ForwardTypeList.
+/// If some list of traits(TypeListOfTraits = bcl::TypeList<...>)
+/// has been constructed it is possible to check whether traits from this list
+/// are set in the following way :
+/// `bcl::ForwardTypeList<bcl::trait::IsAny, TypeListOfTraits>::is_any(Dptr)`.
+template<class... Traits> struct IsAny {
+  template<class Descriptor> static bool is_any(const Descriptor &Dptr) {
+    return Dptr.template is_any<Traits...>();
+  }
+};
+
+/// Check whether specified traits is set.
+///
+/// It is convenient to use this class with bcl::ForwardTypeList.
+/// If some list of traits(TypeListOfTraits = bcl::TypeList<...>)
+/// has been constructed it is possible to check whether traits from this list
+/// are set in the following way :
+/// `bcl::ForwardTypeList<bcl::trait::IsAny, TypeListOfTraits>::is(Dptr)`.
+template<class... Traits> struct Is {
+  template<class Descriptor> static bool is(const Descriptor &Dptr) {
+    return Dptr.template is<Traits...>();
+  }
+};
 
 /// Unsets list of traits. This list can be also specified as
 /// bcl::TraitDescriptor or bcl::TraitSet.
