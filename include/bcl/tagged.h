@@ -265,6 +265,8 @@ private:
 /// via tag of a type (Tuple.get<Tag>()).
 template<class... Taggeds>
 struct tagged_tuple: public std::tuple<typename Taggeds::type...> {
+  using tuple = std::tuple<typename Taggeds::type...>;
+
   template<class... ArgsTy,
     class = typename std::enable_if<
       std::is_constructible<
@@ -300,6 +302,22 @@ struct tagged_tuple: public std::tuple<typename Taggeds::type...> {
       bcl::index_of<bcl::get_tagged<Tag, Taggeds...>, Taggeds...>()>(*this);
   }
 };
+
+/// Provide access to the number of elements in a tuple.
+template<class T> class tagged_tuple_size;
+
+/// Provide access to the number of elements in a tuple.
+template<class... Taggeds>
+class tagged_tuple_size<tagged_tuple<Taggeds...>> :
+  public std::tuple_size<typename tagged_tuple<Taggeds...>::tuple> {};
+
+/// Provide compile-time access to the types of the elements of a tuple.
+template<class Tag, class T> class tagged_tuple_element;
+
+/// Provide compile-time access to the types of the elements of a tuple.
+template<class Tag, class... Taggeds>
+class tagged_tuple_element<Tag, tagged_tuple<Taggeds...>> :
+  public tags::get<Tag, Taggeds...>::type {};
 
 namespace tags {
 namespace detail {
