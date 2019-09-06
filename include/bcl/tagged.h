@@ -319,6 +319,29 @@ template<class Tag, class... Taggeds>
 class tagged_tuple_element<Tag, tagged_tuple<Taggeds...>> :
   public tags::get<Tag, Taggeds...>::type {};
 
+/// Provide compile time access to the index of a specified tag in a tuple.
+template<class Tag, class T> class tagged_tuple_idx;
+
+/// Provide compile time access to the index of a specified tag in a tuple.
+template<class Tag, class... Taggeds>
+class tagged_tuple_idx<Tag, tagged_tuple<Taggeds...>> :
+  public std::integral_constant<
+    std::size_t, bcl::index_of<Tag, Taggeds...>()> {};
+
+/// Provide compile time access to a tag with a specified index.
+template<std::size_t Idx, class T> struct tagged_tuple_tag;
+
+/// Provide compile time access to a tag with a specified index.
+template<std::size_t Idx, class First, class... Taggeds>
+struct tagged_tuple_tag<Idx, tagged_tuple<First, Taggeds...>> :
+  public tagged_tuple_tag<Idx - 1, tagged_tuple<Taggeds...>> {};
+
+/// Provide compile time access to a tag with a specified index.
+template<class First, class... Taggeds>
+struct tagged_tuple_tag<0, tagged_tuple<First, Taggeds...>> {
+  using type = typename First::tag;
+};
+
 namespace tags {
 namespace detail {
 template<class Ty, class Tags, class... Taggeds>
