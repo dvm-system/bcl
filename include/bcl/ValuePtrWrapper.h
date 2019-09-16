@@ -43,7 +43,7 @@ namespace bcl {
 template<class T> struct ValuePtrWrapper {
   template<class... ArgT>
   explicit ValuePtrWrapper(const T *&Ptr, ArgT... Args) :
-    mValue(std::forward<ArgT>(Arg)...), mPtr(&Ptr) {
+    mValue(std::forward<ArgT>(Args)...), mPtr(&Ptr) {
     *mPtr = &mValue;
   }
   ValuePtrWrapper(ValuePtrWrapper &) = delete;
