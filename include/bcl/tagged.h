@@ -311,6 +311,11 @@ template<class... Taggeds>
 class tagged_tuple_size<tagged_tuple<Taggeds...>> :
   public std::tuple_size<typename tagged_tuple<Taggeds...>::tuple> {};
 
+/// Evaluate to true if there are no elements into a tuple.
+template<class T> class tagged_tuple_empty :
+  public std::conditional<(tagged_tuple_size<T>::value > 0),
+    std::true_type, std::false_type>::type{};
+
 /// Provide compile-time access to the types of the elements of a tuple.
 template<class Tag, class T> class tagged_tuple_element;
 
@@ -341,6 +346,60 @@ template<class First, class... Taggeds>
 struct tagged_tuple_tag<0, tagged_tuple<First, Taggeds...>> {
   using type = typename First::tag;
 };
+
+namespace tags {
+namespace detail {
+template<std::size_t Idx, class Function, class... Taggeds>
+void for_each(const tagged_tuple<Taggeds...> &T,
+    Function &&F, std::false_type) {}
+
+template<std::size_t Idx, class Function, class... Taggeds>
+void for_each(tagged_tuple<Taggeds...> &T, Function &&F, std::true_type) {
+  using TupleT = tagged_tuple<Taggeds...>;
+  using TagT = typename tagged_tuple_tag<Idx, TupleT>::type;
+#if defined __GNUC__ || defined __clang__ || defined _MSC_VER && _MSC_VER >= 1911
+  F.template operator()<get_tagged<TagT, Taggeds...>>(T.get<TagT>());
+#else
+  F.operator()<get_tagged<TagT, Taggeds...>>(T.get<TagT>());
+#endif
+  using IsLast = typename std::conditional<
+    (Idx + 1 < tagged_tuple_size<TupleT>::value),
+    std::true_type, std::false_type>::type;
+  for_each<Idx + 1>(T, F, IsLast());
+}
+
+template<std::size_t Idx, class Function, class... Taggeds>
+void for_each(const tagged_tuple<Taggeds...> &T, Function &&F, std::true_type) {
+  using TupleT = tagged_tuple<Taggeds...>;
+  using TagT = typename tagged_tuple_tag<Idx, TupleT>::type;
+#if defined __GNUC__ || defined __clang__ || defined _MSC_VER && _MSC_VER >= 1911
+  F.template operator()<get_tagged<TagT, Taggeds...>>(T.get<TagT>());
+#else
+  F.operator()<get_tagged<TagT, Taggeds...>>(T.get<TagT>());
+#endif
+  using IsLast = typename std::conditional<
+    (Idx + 1 < tagged_tuple_size<TupleT>::value),
+    std::true_type, std::false_type>::type;
+  for_each<Idx + 1>(T, F, IsLast());
+}
+}
+}
+
+/// Call a specified function for each element in a tuple.
+template<class Function, class... Taggeds>
+void for_each(tagged_tuple<Taggeds...> &T, Function &&F) {
+  using TupleT = tagged_tuple<Taggeds...>;
+  tags::detail::for_each<0>(T, std::forward<Function>(F),
+    tagged_tuple_empty<TupleT>());
+}
+
+/// Call a specified function for each element in a tuple.
+template<class Function, class... Taggeds>
+void for_each(const tagged_tuple<Taggeds...> &T, Function &&F) {
+  using TupleT = tagged_tuple<Taggeds...>;
+  tags::detail::for_each<0>(T, std::forward<Function>(F),
+    tagged_tuple_empty<TupleT>());
+}
 
 namespace tags {
 namespace detail {
