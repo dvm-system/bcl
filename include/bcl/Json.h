@@ -1512,9 +1512,7 @@ struct Traits<std::map<KeyTy, Ty, Compare, Allocator>> {
         if (!Value.empty()) {
           String Id;
           Traits<typename MapTy::key_type>::unparse(Id, I->first);
-          if (Id.empty() || Id.size() == 1 ||
-              (Id.size() > 2 && Id.front() != '"' && Id.back() != ':'))
-            Id = '"' + Id + '"';
+          Id = bcl::quote(std::move(Id));
           JSON += Id + ':'+ Value + ',';
         }
       }
@@ -1523,9 +1521,7 @@ struct Traits<std::map<KeyTy, Ty, Compare, Allocator>> {
       if (!Value.empty()) {
         String Id;
         Traits<typename MapTy::key_type>::unparse(Id, I->first);
-        if (Id.empty() || Id.size() == 1 ||
-            (Id.size() > 2 && Id.front() != '"' && Id.back() != ':'))
-          Id = '"' + Id + '"';
+        Id = bcl::quote(std::move(Id));
         JSON += Id + ':' + Value;
       } else if (JSON.back() == ',') {
         JSON.erase(JSON.size() - 1);
@@ -1567,9 +1563,7 @@ struct Traits<std::multimap<KeyTy, Ty, Compare, Allocator>> {
         if (!Value.empty()) {
           String Id;
           Traits<typename MapTy::key_type>::unparse(Id, I->first);
-          if (Id.empty() || Id.size() == 1 ||
-              (Id.size() > 2 && Id.front() != '"' && Id.back() != ':'))
-            Id = '"' + Id + '"';
+          Id = bcl::quote(std::move(Id));
           JSON += Id + ':' + Value + ',';
         }
       }
@@ -1578,9 +1572,7 @@ struct Traits<std::multimap<KeyTy, Ty, Compare, Allocator>> {
       if (!Value.empty()) {
         String Id;
         Traits<typename MapTy::key_type>::unparse(Id, I->first);
-        if (Id.empty() || Id.size() == 1 ||
-            (Id.size() > 2 && Id.front() != '"' && Id.back() != ':'))
-          Id = '"' + Id + '"';
+        Id = bcl::quote(std::move(Id));
         JSON += Id + ':' + Value;
       } else if (JSON.back() == ',') {
         JSON.erase(JSON.size() - 1);

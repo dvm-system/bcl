@@ -30,6 +30,7 @@
 #include <cstring>
 #include <type_traits>
 #include <memory>
+#include <string>
 
 /// \brief This can be used to set list of parameters as single parameter
 /// of a macro.
@@ -249,6 +250,22 @@ static inline bool isWhitespace(unsigned char c) {
   case ' ': case '\t': case '\f': case '\v': case '\r': return true;
   default: return false;
   }
+}
+
+/// Add begining and ending quotes to a specified string
+/// if quotes does not exist.
+static inline std::string quote(const std::string &Str) {
+  if (!(Str.size() > 1 && Str.front() == '"' && Str.back() == '"'))
+    return '"' + Str + '"';
+  return Str;
+}
+
+/// Add begining and ending quotes to a specified string
+/// if quotes does not exist.
+static inline std::string quote(std::string &&Str) {
+  if (!(Str.size() > 1 && Str.front() == '"' && Str.back() == '"'))
+    return '"' + Str + '"';
+  return std::move(Str);
 }
 
 /// \brief Constructs an object of non-array type T and passes the given args
