@@ -52,7 +52,10 @@ else()
   set(BCL_EXPORT OFF)
 
   add_library(BCL::Core ALIAS Core)
-  add_library(BCL::NodeJSSocket ALIAS NodeJSSocket)
+
+  if(BCL_NODEJS_SOCKET)
+    add_library(BCL::NodeJSSocket ALIAS NodeJSSocket)
+  endif()
 
   # Try to set some variables which is available in BCL build tree. So, the
   # following variables will be available if add_subdirectory() has been used
