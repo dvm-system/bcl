@@ -361,7 +361,8 @@ void for_each(tagged_tuple<Taggeds...> &T, Function &&F, std::true_type) {
   using TupleT = tagged_tuple<Taggeds...>;
   using TagT = typename tagged_tuple_tag<Idx, TupleT>::type;
 #if defined __GNUC__ || defined __clang__ || defined _MSC_VER && _MSC_VER >= 1911
-  F.template operator()<get_tagged<TagT, Taggeds...>>(T.template get<TagT>());
+  F.template operator()<get_tagged<TagT, Taggeds...>>(
+    T.TupleT:: template get<TagT>());
 #else
   F.operator()<get_tagged<TagT, Taggeds...>>(T.get<TagT>());
 #endif
@@ -376,7 +377,8 @@ void for_each(const tagged_tuple<Taggeds...> &T, Function &&F, std::true_type) {
   using TupleT = tagged_tuple<Taggeds...>;
   using TagT = typename tagged_tuple_tag<Idx, TupleT>::type;
 #if defined __GNUC__ || defined __clang__ || defined _MSC_VER && _MSC_VER >= 1911
-  F.template operator()<get_tagged<TagT, Taggeds...>>(T.template get<TagT>());
+  F.template operator()<get_tagged<TagT, Taggeds...>>(
+    T.TupleT:: template get<TagT>());
 #else
   F.operator()<get_tagged<TagT, Taggeds...>>(T.get<TagT>());
 #endif
