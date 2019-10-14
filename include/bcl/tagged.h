@@ -200,6 +200,8 @@ using get_tagged_alias = typename tags::detail::alias_or_void<
 template<class Tagged1, class Tagged2>
 struct tagged_pair :
     public std::pair<typename Tagged1::type, typename Tagged2::type> {
+  using taggeds = bcl::TypeList<Tagged1, Tagged2>;
+
   template<class... ArgsTy,
     class = typename std::enable_if<
       std::is_constructible<
@@ -265,6 +267,7 @@ private:
 /// via tag of a type (Tuple.get<Tag>()).
 template<class... Taggeds>
 struct tagged_tuple: public std::tuple<typename Taggeds::type...> {
+  using taggeds = bcl::TypeList<Taggeds...>;
   using tuple = std::tuple<typename Taggeds::type...>;
 
   template<class... ArgsTy,
