@@ -200,7 +200,7 @@ public:
     // response.
     S->receive([Reject, Delimiter, S, CS](const std::string &Request) {
       if (*Reject) {
-        S->send(IntrusiveConnection::Reject());
+        S->send(std::string(IntrusiveConnection::Reject()) + Delimiter);
         return;
       }
       std::queue<std::string> Buffer;
