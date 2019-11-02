@@ -1242,9 +1242,9 @@ template<> struct Traits<char *> {
         auto Value = Lex.discardQuote();
         auto Unescaped = Traits<std::string>::unescape(
           Lex.json().substr(Value.first, Value.second - Value.first + 1));
-        TmpDest = new char[Unescaped.length()];
+        TmpDest = new char[Unescaped.length() + 1];
         Unescaped.copy(TmpDest, Unescaped.length());
-        TmpDest[Value.second - Value.first + 1] = '\0';
+        TmpDest[Unescaped.length()] = '\0';
       }
       catch (...) {
         if (TmpDest) { try { delete TmpDest; } catch (...) {} }
