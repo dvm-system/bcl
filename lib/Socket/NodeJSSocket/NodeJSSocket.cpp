@@ -49,14 +49,16 @@ public:
   /// (data) => {socket.write(data)}
   /// \param [in] On A function which adds listeners functions to socket events,
   /// for example (event, callback) => {socket.on(event, callback)}
-  SocketImp(Isolate *I, Handle<Function> Send, Handle<Function> On) :
+  SocketImp(Isolate *I, Local<Function> Send, Local<Function> On) :
     mIsolate(I), mSend(I, Send), mOn(I, On) {}
 
   /// Sends a message.
   void send(const std::string &Message) const override {
     const unsigned Argc = 1;
-    Local<Value> Argv[Argc] = {String::NewFromUtf8(mIsolate, Message.c_str())};
-    Local<Function>::New(mIsolate, mSend)->Call(Null(mIsolate), Argc, Argv);
+    Local<Value> Argv[Argc] = {
+        String::NewFromUtf8(mIsolate, Message.c_str()).ToLocalChecked()};
+    Local<Context> Ctx = mIsolate->GetCurrentContext();
+    Local<Function>::New(mIsolate, mSend)->Call(Ctx, Null(mIsolate), Argc, Argv);
   }
 
   /// Adds the listener function to the end of array of listeners, which are
@@ -66,10 +68,12 @@ public:
     Local<FunctionTemplate> Tpl =
       FunctionTemplate::New(mIsolate, receiveWrapper,
         External::New(mIsolate, mReceiveCallbacks.top().get()));
-    Local<Function> JSF = Tpl->GetFunction();
+    Local<Context> Ctx = mIsolate->GetCurrentContext();
+    Local<Function> JSF = Tpl->GetFunction(Ctx).ToLocalChecked();
     const unsigned Argc = 2;
-    Local<Value> Argv[Argc] = { String::NewFromUtf8(mIsolate, "data"), JSF };
-    Local<Function>::New(mIsolate, mOn)->Call(Null(mIsolate), Argc, Argv);
+    Local<Value> Argv[Argc] = {
+        String::NewFromUtf8(mIsolate, "data").ToLocalChecked(), JSF};
+    Local<Function>::New(mIsolate, mOn)->Call(Ctx, Null(mIsolate), Argc, Argv);
   }
 
   /// Adds the listener function to the end of array of listeners, which are
@@ -79,10 +83,12 @@ public:
     Local<FunctionTemplate> Tpl =
       FunctionTemplate::New(mIsolate, closedWrapper,
         External::New(mIsolate, mClosedCallbacks.top().get()));
-    Local<Function> JSF = Tpl->GetFunction();
+    Local<Context> Ctx = mIsolate->GetCurrentContext();
+    Local<Function> JSF = Tpl->GetFunction(Ctx).ToLocalChecked();
     const unsigned Argc = 2;
-    Local<Value> Argv[Argc] = { String::NewFromUtf8(mIsolate, "close"), JSF };
-    Local<Function>::New(mIsolate, mOn)->Call(Null(mIsolate), Argc, Argv);
+    Local<Value> Argv[Argc] = {
+        String::NewFromUtf8(mIsolate, "close").ToLocalChecked(), JSF};
+    Local<Function>::New(mIsolate, mOn)->Call(Ctx, Null(mIsolate), Argc, Argv);
   }
 
 private:
@@ -92,7 +98,8 @@ private:
     Isolate *CurrIsolate  = Args.GetIsolate();
     if (Args.Length() < 1 || !Args[0]->IsUint8Array()) {
       CurrIsolate->ThrowException(Exception::TypeError(
-        String::NewFromUtf8(CurrIsolate, "Unsupported type of received data!")));
+          String::NewFromUtf8(CurrIsolate, "Unsupported type of received data!")
+              .ToLocalChecked()));
       return;
     }
     auto Data = Local<Uint8Array>::Cast(Args[0]);
@@ -111,7 +118,7 @@ private:
     if (Args.Length() < 1 || !Args[0]->IsBoolean()) {
       CurrIsolate->ThrowException(Exception::TypeError(
         String::NewFromUtf8(CurrIsolate,
-         "Unsupported type of 'had_error' parameter!")));
+         "Unsupported type of 'had_error' parameter!").ToLocalChecked()));
       return;
     }
     auto HadError = Local<Boolean>::Cast(Args[0]);
@@ -137,10 +144,11 @@ public:
   static void init(Isolate* I) {
     // Prepare constructor template
     Local<FunctionTemplate> Tpl = FunctionTemplate::New(I, New);
-    Tpl->SetClassName(String::NewFromUtf8(I, "Connection"));
+    Tpl->SetClassName(String::NewFromUtf8(I, "Connection").ToLocalChecked());
     Tpl->InstanceTemplate()->SetInternalFieldCount(1);
     NODE_SET_PROTOTYPE_METHOD(Tpl, "startServer", startServer);
-    mCtor.Reset(I, Tpl->GetFunction());
+    Local<Context> Ctx = I->GetCurrentContext();
+    mCtor.Reset(I, Tpl->GetFunction(Ctx).ToLocalChecked());
   }
 
   /// Creats new instance of this object.
@@ -185,13 +193,14 @@ private:
       if (Args.Length() < 2) {
       CurrIsolate->ThrowException(Exception::TypeError(
         String::NewFromUtf8(CurrIsolate,
-          "Too few parameters, two parameters expected!")));
+          "Too few parameters, two parameters expected!").ToLocalChecked()));
       return;
       }
       if (!Args[0]->IsFunction() || !Args[1]->IsFunction()) {
         CurrIsolate->ThrowException(Exception::TypeError(
           String::NewFromUtf8(CurrIsolate,
-            "The first and the second parameters must be functions!")));
+            "The first and the second parameters must be functions!")
+          .ToLocalChecked()));
         return;
       }
       auto S = new SocketImp(CurrIsolate,
