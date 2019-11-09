@@ -192,6 +192,7 @@ private:
   /// Start execution of a server.
   static void startServer(const FunctionCallbackInfo<Value>& Args) {
     auto* C = ObjectWrap::Unwrap<Connection>(Args.Holder());
+    C->mSocket->closed([C](bool){ C->Unref(); });
     createServer(C->mSocket);
   }
 
@@ -222,6 +223,7 @@ private:
         Local<Function>::Cast(Args[1]));
       auto *C = new Connection(S);
       C->Wrap(Args.This());
+      C->Ref();
       Args.GetReturnValue().Set(Args.This());
     } else {
       newInstance(Args);
