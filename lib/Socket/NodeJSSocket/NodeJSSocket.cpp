@@ -2,11 +2,25 @@
 //
 //                       Base Construction Library (BCL)
 //
+// Copyright 2018 Nikita Kataev
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 //===----------------------------------------------------------------------===//
 //
 // This file implements a socket interface by using the net.Socket
 // functionality. So this proposes Node.js Addon written on C++ which is
-// usefull to exchange messages between JavaScript and C++ applications.
+// useful to exchange messages between JavaScript and C++ applications.
 // A C++ application must implement createServer() function from Socket.h and
 // will be treated as a server which is run when JS application call
 // startServer() function for a connection obtained after connect() call.
@@ -22,7 +36,7 @@
 //    connection.startServer();
 //  });
 //
-// Now it is possible to use general 'net' module possiblities to exchange
+// Now it is possible to use general 'net' module possibilities to exchange
 // string messages between client (JS application) and server (C++ application).
 //===----------------------------------------------------------------------===//
 
@@ -42,7 +56,7 @@ namespace {
 /// This implements a socket interface by using the net.Socket functionality.
 class SocketImp: public Socket<std::string> {
 public:
-  /// \brief Creates a wrapper of net.Socket.
+  /// \brief Create a wrapper of net.Socket.
   ///
   /// \param [in] I Isolated instance of the V8 engine.
   /// \param [in] Send A function which sends data to a socket, for example
@@ -52,7 +66,7 @@ public:
   SocketImp(Isolate *I, Local<Function> Send, Local<Function> On) :
     mIsolate(I), mSend(I, Send), mOn(I, On) {}
 
-  /// Sends a message.
+  /// Send a message.
   void send(const std::string &Message) const override {
     const unsigned Argc = 1;
     Local<Value> Argv[Argc] = {
@@ -61,8 +75,8 @@ public:
     Local<Function>::New(mIsolate, mSend)->Call(Ctx, Null(mIsolate), Argc, Argv);
   }
 
-  /// Adds the listener function to the end of array of listeners, which are
-  /// invoked when some data are recived.
+  /// Add the listener function to the end of array of listeners, which are
+  /// invoked when some data are received.
   void receive(const ReceiveCallback &F) const override {
     mReceiveCallbacks.push(bcl::make_unique<ReceiveCallback>(F));
     Local<FunctionTemplate> Tpl =
@@ -76,7 +90,7 @@ public:
     Local<Function>::New(mIsolate, mOn)->Call(Ctx, Null(mIsolate), Argc, Argv);
   }
 
-  /// Adds the listener function to the end of array of listeners, which are
+  /// Add the listener function to the end of array of listeners, which are
   /// invoked when some data are received.
   void closed(const ClosedCallback &F) const override {
     mClosedCallbacks.push(bcl::make_unique<ClosedCallback>(F));
@@ -134,13 +148,13 @@ private:
   mutable std::stack<std::unique_ptr<ClosedCallback>> mClosedCallbacks;
 };
 
-/// This represents client/server connetction, server will be started when
+/// This represents client/server connection, server will be started when
 /// connection is created.
 class Connection : public node::ObjectWrap {
   typedef Socket<std::string> SocketTy;
 
 public:
-  /// Performs initialization to propose creation of new instancies of an object.
+  /// Perform initialization to propose creation of new instances of an object.
   static void init(Isolate* I) {
     // Prepare constructor template
     Local<FunctionTemplate> Tpl = FunctionTemplate::New(I, New);
@@ -151,7 +165,7 @@ public:
     mCtor.Reset(I, Tpl->GetFunction(Ctx).ToLocalChecked());
   }
 
-  /// Creats new instance of this object.
+  /// Create new instance of this object.
   /// \param [in] Args Parameters must proposes two functions:
   /// - A function which sends data to a socket, for example
   /// (data) => {socket.write(data)}.
@@ -175,13 +189,13 @@ private:
   /// Destructor.
   ~Connection() { delete mSocket; }
 
-  /// Starts execution of a server.
+  /// Start execution of a server.
   static void startServer(const FunctionCallbackInfo<Value>& Args) {
     auto* C = ObjectWrap::Unwrap<Connection>(Args.Holder());
     createServer(C->mSocket);
   }
 
-  /// Creates new instance of this object.
+  /// Create new instance of this object.
   /// \param [in] Args Parameters must proposes two functions:
   /// - A function which sends data to a socket, for example
   /// (data) => {socket.write(data)}.
