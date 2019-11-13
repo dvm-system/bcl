@@ -1203,6 +1203,23 @@ template<> struct Traits<double> {
   }
 };
 
+template<> struct Traits<bool> {
+  inline static bool parse(bool &Dest, Lexer &Lex) noexcept {
+    try {
+      std::string Str;
+      Traits<std::string>::parse(Str, Lex);
+      Dest = Str == "true";
+      return (Str == "true" || Str == "false");
+    }
+    catch (...) {
+      return false;
+    }
+  }
+  inline static void unparse(String &JSON, bool Obj) {
+    JSON += Obj ? "true" : "false";;
+  }
+};
+
 template<> struct Traits<char *> {
   inline static bool parse(char *&Dest, Lexer &Lex) {
     char *TmpDest = nullptr;
