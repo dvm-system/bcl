@@ -746,7 +746,7 @@ public:
 
   void unset_all() {
     if (!mValues.empty())
-      mTD.template for_each(ConflictsResolver(&mValues));
+      mTD.for_each(ConflictsResolver(&mValues));
     mTD.unset_all();
   }
 
