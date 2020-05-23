@@ -33,5 +33,6 @@
 #define BCL_HOMEPAGE_URL "@BCL_HOMEPAGE_URL@"
 #cmakedefine BCL_LEGACY
 #cmakedefine BCL_NODEJS_SOCKET
+#cmakedefine BCL_C_SOCKET
 
 #endif//BCL_CONFIG_H

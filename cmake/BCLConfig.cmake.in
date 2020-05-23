@@ -32,6 +32,14 @@ set(BCL_EXAMPLE @BCL_EXAMPLE@)
 # ON if NodeJSSocket is available, OFF otherwise.
 set(BCL_NODEJS_SOCKET @BCL_NODEJS_SOCKET@)
 
+# ON if CSocket is available, OFF otherwise.
+set(BCL_C_SOCKET @BCL_C_SOCKET@)
+
+if (BCL_C_SOCKET)
+  # Export alias for convenience.
+  add_library(BCL::CSocket ALIAS BCLCSocket)
+endif()
+
 if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/BCLExports.cmake)
   # ON if BCLExports.cmake is available.
   set(BCL_EXPORT ON)
