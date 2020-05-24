@@ -118,7 +118,7 @@ public:
 void bcl::net::startServer(const net::AddressT &Address, net::PortT PortNo,
     std::size_t ConnectionMaxNumber, const net::SocketStatusHandler &on,
     std::size_t BufferSize) {
-  net::Connection Connection(Address, PortNo);
+  net::Connection PreConnection(Address, PortNo);
   auto closeSocket = [&on](net::SocketT SocketFD, const net::Connection &C) {
     if (close(SocketFD) < 0)
       on(net::SocketStatus::CloseError, C);
@@ -127,14 +127,14 @@ void bcl::net::startServer(const net::AddressT &Address, net::PortT PortNo,
   };
   auto SocketFD = socket(AF_INET, SOCK_STREAM, 0);
   if (SocketFD < 0) {
-    on(net::SocketStatus::CreateError, Connection);
+    on(net::SocketStatus::CreateError, PreConnection);
     return;
   }
   int Opt = 1;
   // Use it to enable binding while socket is in TIME_WAIT state.
   if (setsockopt(SocketFD, SOL_SOCKET, SO_REUSEADDR, &Opt, sizeof(Opt)) < 0) {
-    on(net::SocketStatus::OptionError, Connection);
-    closeSocket(SocketFD, Connection);
+    on(net::SocketStatus::OptionError, PreConnection);
+    closeSocket(SocketFD, PreConnection);
     return;
   }
   sockaddr_in ServerAddr;
@@ -145,18 +145,27 @@ void bcl::net::startServer(const net::AddressT &Address, net::PortT PortNo,
   } else {
     auto Host = gethostbyname(Address.c_str());
     if (!Host) {
-      on(net::SocketStatus::HostnameError, Connection);
-      closeSocket(SocketFD, Connection);
+      on(net::SocketStatus::HostnameError, PreConnection);
+      closeSocket(SocketFD, PreConnection);
       return;
     }
     memmove(&ServerAddr.sin_addr.s_addr,
       Host->h_addr_list[0], Host->h_length);
   }
   if (bind(SocketFD, (sockaddr *)&ServerAddr, sizeof(ServerAddr)) < 0) {
-    on(net::SocketStatus::BindError, Connection);
-    closeSocket(SocketFD, Connection);
+    on(net::SocketStatus::BindError, PreConnection);
+    closeSocket(SocketFD, PreConnection);
     return;
   }
+  socklen_t ServerAddrLength = sizeof(ServerAddr);
+  if (getsockname(SocketFD,
+        (sockaddr *)&ServerAddr, &ServerAddrLength) < 0) {
+    on(net::SocketStatus::ServerAddressError, PreConnection);
+    closeSocket(SocketFD, PreConnection);
+    return;
+  }
+  net::Connection Connection(
+    inet_ntoa(ServerAddr.sin_addr), ntohs(ServerAddr.sin_port));
   if (listen(SocketFD, 5)) {
     on(net::SocketStatus::ListenError, Connection);
     closeSocket(SocketFD, Connection);
@@ -199,7 +208,7 @@ void bcl::net::startServer(const net::AddressT &Address, net::PortT PortNo,
       continue;
     }
     sockaddr_in ActualServerAddr;
-    socklen_t ActualServerAddrLength;
+    socklen_t ActualServerAddrLength = sizeof(ActualServerAddr);
     if (getsockname(ConnectionFD,
          (sockaddr *)&ActualServerAddr, &ActualServerAddrLength) < 0) {
       on(net::SocketStatus::ServerAddressError, Connection);
@@ -207,7 +216,7 @@ void bcl::net::startServer(const net::AddressT &Address, net::PortT PortNo,
       continue;
     }
     net::Connection NewConnection(
-      inet_ntoa(ActualServerAddr.sin_addr), PortNo,
+      inet_ntoa(ActualServerAddr.sin_addr), ntohs(ActualServerAddr.sin_port),
       inet_ntoa(ClientAddr.sin_addr), ntohs(ClientAddr.sin_port));
     on(net::SocketStatus::Accept, NewConnection);
     auto EngineItr = ActiveSockets.emplace(std::piecewise_construct,
