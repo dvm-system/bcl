@@ -19,7 +19,7 @@ PROJECT(BCL VERSION 3.0 LANGUAGES CXX)
 
 set(BCL_DESCRIPTION "Base Construction Library")
 set(BCL_AUTHOR "Nikita Kataev (kaniandr@gmail.com)")
-set(BCL_HOMEPAGE_URL "https://bitbucket.org/dvm-system/idb")
+set(BCL_HOMEPAGE_URL "https://github.com/dvm-system/bcl")
 
 option(BCL_LEGACY "Enable legacy code." OFF)
 option(BCL_TEST "Build tests if BUILD_TESTING is ON." ON)
