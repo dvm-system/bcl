@@ -29,8 +29,6 @@ option(BCL_INSTALL "Enable installation of BCL." ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-configure_file("include/bcl/bcl-config.h.in" "bcl/bcl-config.h")
-
 add_library(Core INTERFACE)
 
 # Populate core headers for GUI.
@@ -115,3 +113,6 @@ if (BCL_EXAMPLE)
   include(BCLCompilerOptions)
   add_subdirectory(example)
 endif()
+
+# Defer configuration because some options are set in subdirectories.
+configure_file("include/bcl/bcl-config.h.in" "bcl/bcl-config.h")
