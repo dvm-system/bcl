@@ -43,10 +43,10 @@ namespace net {
 
 using PortT = int;
 using AddressT = std::string;
-using SocketT = int;
 
 enum class SocketStatus : uint8_t {
   UnknownError,
+  InitializeError,
   HostnameError,
   ServerAddressError,
   CreateError,
@@ -68,7 +68,7 @@ enum class SocketStatus : uint8_t {
 /// addresses of a server and a client are both available.
 class Connection {
 public:
-  Connection(const AddressT &ServerAddress, PortT ServerPort) 
+  Connection(const AddressT &ServerAddress, PortT ServerPort)
     : mServerAddress(ServerAddress), mServerPort(ServerPort) {}
 
   Connection(
@@ -102,7 +102,7 @@ using SocketStatusHandler = std::function<void(SocketStatus, const Connection &)
 /// \param [in] PortNo Server port number.
 /// \param [in] ConnectionMaxNumber Maximum number of connections which can
 ///             be active at the same time. Note, that an actual number of
-///             connections cannot exceed a maximum number of sockets 
+///             connections cannot exceed a maximum number of sockets
 ///             that cannot be opened simultaneously.
 ///             Use 0 to disable connection limits
 /// \param [in] on Handler which will be invoked to process any event.
