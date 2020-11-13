@@ -32,6 +32,18 @@
 #include <memory>
 #include <string>
 
+#ifndef BCL_ALWAYS_INLINE
+# ifndef _WIN32
+#  define BCL_ALWAYS_INLINE __attribute__((always_inline))
+# else
+#  ifdef __ICL // set for Intel Compiler
+#   define BCL_ALWAYS_INLINE __attribute__((always_inline))
+#  else
+#   define BCL_ALWAYS_INLINE
+#  endif
+# endif
+#endif
+
 /// \brief This can be used to set list of parameters as single parameter
 /// of a macro.
 ///
