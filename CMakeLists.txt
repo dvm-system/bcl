@@ -15,6 +15,9 @@
 
 cmake_minimum_required(VERSION 3.4.3)
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 PROJECT(BCL VERSION 3.0 LANGUAGES CXX)
 
 set(BCL_DESCRIPTION "Base Construction Library")

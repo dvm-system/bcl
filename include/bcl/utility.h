@@ -31,6 +31,7 @@
 #include <type_traits>
 #include <memory>
 #include <string>
+#include <utility>
 
 #ifndef BCL_ALWAYS_INLINE
 # ifndef _WIN32
@@ -319,6 +320,22 @@ make_unique(size_t n) {
 template <class T, class... Args>
 typename std::enable_if<std::extent<T>::value != 0>::type
 make_unique(Args &&...) = delete;
+
+namespace detail {
+template <typename T, typename... ArgT, std::size_t... Indexes>
+std::unique_ptr<T> make_unique_piecewise(std::tuple<ArgT...> Args,
+                                 std::index_sequence<Indexes...>) {
+  return std::make_unique<T>(std::get<Indexes>(std::move(Args))...);
+}
+}
+
+/// Construct an object of non-array type T and forwards elements of Args to the
+/// constructor of T.
+template <typename T, typename... ArgT>
+std::unique_ptr<T> make_unique_piecewise(std::tuple<ArgT...> Args) {
+  return detail::make_unique_piecewise<T>(std::move(Args),
+                                          std::index_sequence_for<ArgT...>());
+}
 
 /// Exchanges contents of passed objects, this is useful if specified objects
 /// haven't necessary operators available (e.g. private operator=, etc).
