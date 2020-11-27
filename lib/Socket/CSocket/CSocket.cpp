@@ -187,6 +187,11 @@ static inline std::pair<std::size_t, bool> receiveData(SocketT S,
 
 namespace {
 class SocketImp: public bcl::Socket<std::string> {
+  enum class State : uint8_t {
+    Open,
+    OnClose,
+    Closed,
+  };
 public:
   SocketImp(SocketT ConnectionFD, bcl::net::Connection &Connection,
       std::size_t BufferSize, const bcl::net::SocketStatusHandler &on)
@@ -198,9 +203,10 @@ public:
   void send(const std::string &Message) const override {
     if (!sendData(mConnectionFD, Message)) {
       mOn(bcl::net::SocketStatus::SendError, mConnection);
-      closeSocket(false);
+      mState = State::OnClose;
+    } else {
+      mOn(bcl::net::SocketStatus::Send, mConnection);
     }
-    mOn(bcl::net::SocketStatus::Send, mConnection);
   }
 
   void receive(const ReceiveCallback &F) const override {
@@ -229,14 +235,16 @@ public:
       mOn(bcl::net::SocketStatus::Receive, mConnection);
       for (auto &Callback : mReceiveCallbacks)
         Callback(std::string(Buffer.get()));
-      if (mClosed)
+      if (mState == State::OnClose) {
+        closeSocket(false);
         return 1;
+      }
     }
   }
   std::string Data;
  private:
   void closeSocket(bool IsOk) const {
-    mClosed = true;
+    mState = State::Closed;
     if (!::closeSocket(mConnectionFD)) {
       IsOk = false;
       mOn(bcl::net::SocketStatus::CloseError, mConnection);
@@ -253,7 +261,7 @@ public:
   bcl::net::SocketStatusHandler mOn;
   mutable std::vector<ReceiveCallback> mReceiveCallbacks;
   mutable std::vector<ClosedCallback> mClosedCallbacks;
-  mutable bool mClosed = false;
+  mutable State mState = State::Open;
 };
 }
 
