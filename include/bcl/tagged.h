@@ -317,7 +317,7 @@ class tagged_tuple_size<tagged_tuple<Taggeds...>> :
 /// Evaluate to true if there are no elements into a tuple.
 template<class T> class tagged_tuple_empty :
   public std::conditional<(tagged_tuple_size<T>::value > 0),
-    std::true_type, std::false_type>::type{};
+    std::false_type, std::true_type>::type{};
 
 /// Provide compile-time access to the types of the elements of a tuple.
 template<class Tag, class T> class tagged_tuple_element;
@@ -354,10 +354,10 @@ namespace tags {
 namespace detail {
 template<std::size_t Idx, class Function, class... Taggeds>
 void for_each(const tagged_tuple<Taggeds...> &T,
-    Function &&F, std::false_type) {}
+    Function &&F, std::true_type) {}
 
 template<std::size_t Idx, class Function, class... Taggeds>
-void for_each(tagged_tuple<Taggeds...> &T, Function &&F, std::true_type) {
+void for_each(tagged_tuple<Taggeds...> &T, Function &&F, std::false_type) {
   using TupleT = tagged_tuple<Taggeds...>;
   using TagT = typename tagged_tuple_tag<Idx, TupleT>::type;
 #if defined __GNUC__ || defined __clang__ || defined _MSC_VER && _MSC_VER >= 1911
@@ -368,12 +368,13 @@ void for_each(tagged_tuple<Taggeds...> &T, Function &&F, std::true_type) {
 #endif
   using IsLast = typename std::conditional<
     (Idx + 1 < tagged_tuple_size<TupleT>::value),
-    std::true_type, std::false_type>::type;
+    std::false_type, std::true_type>::type;
   for_each<Idx + 1>(T, F, IsLast());
 }
 
 template<std::size_t Idx, class Function, class... Taggeds>
-void for_each(const tagged_tuple<Taggeds...> &T, Function &&F, std::true_type) {
+void for_each(const tagged_tuple<Taggeds...> &T, Function &&F,
+    std::false_type) {
   using TupleT = tagged_tuple<Taggeds...>;
   using TagT = typename tagged_tuple_tag<Idx, TupleT>::type;
 #if defined __GNUC__ || defined __clang__ || defined _MSC_VER && _MSC_VER >= 1911
@@ -384,7 +385,7 @@ void for_each(const tagged_tuple<Taggeds...> &T, Function &&F, std::true_type) {
 #endif
   using IsLast = typename std::conditional<
     (Idx + 1 < tagged_tuple_size<TupleT>::value),
-    std::true_type, std::false_type>::type;
+    std::false_type, std::true_type>::type;
   for_each<Idx + 1>(T, F, IsLast());
 }
 }
