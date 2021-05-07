@@ -25,6 +25,7 @@
 #ifndef BCL_EQUATION_H
 #define BCL_EQUATION_H
 
+#include <assert.h>
 #include <numeric>
 #include <tuple>
 #include <type_traits>
@@ -36,6 +37,8 @@ template<typename ColumnTy, typename ValueTy>
 struct AMonom {
   using ColumnT = ColumnTy;
   using ValueT = ValueTy;
+
+  AMonom() = default;
 
   AMonom(const ColumnT &C, const ValueT &V) : Column(C), Value(V) {}
 
@@ -263,23 +266,25 @@ class BinomialSystem {
 
   static constexpr const UndefT Undef{};
 
-  template <typename ColumnInfoT, typename StreamT>
-  void log(const char *Message, StreamT &OS,
-      typename std::enable_if<!std::is_same<StreamT, UndefT>::value>::type * =
-          nullptr) {
+  template <typename StreamT>
+  void
+  log(const char *Message, StreamT &OS,
+      typename std::enable_if<!std::is_same<StreamT, const UndefT>::value>::type
+          * = nullptr) {
     OS << Message;
   }
 
-  template <typename ColumnInfoT, typename StreamT>
-  void log(const char *Message, StreamT &OS,
-      typename std::enable_if<std::is_same<StreamT, UndefT>::value>::type * =
-          nullptr) {}
+  template <typename StreamT>
+  void
+  log(const char *Message, StreamT &OS,
+      typename std::enable_if<std::is_same<StreamT, const UndefT>::value>::type
+          * = nullptr) {}
 
   template <typename ColumnInfoT, typename StreamT>
   void logEquation(
       const EquationT &Row, const ColumnInfoT &Info, StreamT &OS,
-      typename std::enable_if<!std::is_same<StreamT, UndefT>::value>::type * =
-          nullptr) {
+      typename std::enable_if<!std::is_same<StreamT, const UndefT>::value>::type
+          * = nullptr) {
     printEquation(Row, Info, OS);
     OS << "\n";
   }
@@ -287,8 +292,8 @@ class BinomialSystem {
   template <typename ColumnInfoT, typename StreamT>
   void logEquation(
       const EquationT &Row, const ColumnInfoT &Info, StreamT &OS,
-      typename std::enable_if<std::is_same<StreamT, UndefT>::value>::type * =
-          nullptr) {}
+      typename std::enable_if<std::is_same<StreamT, const UndefT>::value>::type
+          * = nullptr) {}
 
 public:
   template <typename ColumnInfoT, typename StreamT>
@@ -350,8 +355,8 @@ public:
   /// \tparam StreamT Enable logging, if it is specified.
   /// \pre The system was has been instantiated.
   /// \return A number of successfully solved equations.
-  template <class ColumnInfoT, typename StreamT = UndefT,
-            bool IsSolvable = true>
+  template <class ColumnInfoT, bool IsSolvable = true,
+            typename StreamT = const UndefT>
   std::size_t solve(ColumnInfoT &Info, StreamT &OS = Undef) {
     for (std::size_t I = 0; I < mInstantiatedSize; ++I) {
       auto &Row = mRows[mIdx[I]];
@@ -488,7 +493,7 @@ public:
       S.Constant -= Min;
       S.LHS.Column = Info.parameterColumn(S.LHS.Column);
       assert(S.LHS.Value == 1 &&
-             "Coefficient for target variable must be one!");
+             "Coefficient for target variable must be one");
     }
   }
 
