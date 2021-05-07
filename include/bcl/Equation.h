@@ -114,6 +114,11 @@ public:
   using guard_const_iterator = typename GuardList::const_iterator;
   using guard_const_range = Range<guard_const_iterator>;
 
+  Row(ColumnT CL, ValueT VL, ColumnT CR, ValueT VR, ValueT C) :
+    BAEquation<ColumnT, ValueT>(CL, VL, CR, VR, C) {}
+  Row(AMonom<ColumnT, ValueT> L, AMonom<ColumnT, ValueT> R, ValueT C) :
+    BAEquation<ColumnT, ValueT>(L, R, C) {}
+
   void addGuard(ColumnT Col) noexcept(
       noexcept(std::is_nothrow_assignable<ColumnT, ColumnT>::value)) {
     assert(mGuards.second < GuardN && "Too many guards!");
@@ -307,10 +312,7 @@ public:
   /// Add new equation to the system.
   void push_back(typename EquationT::Monom LHS, typename EquationT::Monom RHS,
                  ValueT Constant) {
-    mRows.emplace_back();
-    mRows.back().LHS = LHS;
-    mRows.back().RHS = RHS;
-    mRows.back().Constant = Constant;
+    mRows.emplace_back(LHS, RHS, Constant);
     mIdx.push_back(mRows.size() - 1);
   }
 
