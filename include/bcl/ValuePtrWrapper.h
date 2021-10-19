@@ -42,7 +42,7 @@ namespace bcl {
 /// points to this object.
 template<class T> struct ValuePtrWrapper {
   template<class... ArgT>
-  explicit ValuePtrWrapper(const T *&Ptr, ArgT... Args) :
+  explicit ValuePtrWrapper(T *&Ptr, ArgT... Args) :
     mValue(std::forward<ArgT>(Args)...), mPtr(&Ptr) {
     *mPtr = &mValue;
   }
@@ -67,7 +67,7 @@ template<class T> struct ValuePtrWrapper {
 
 private:
   T mValue;
-  const T **mPtr;
+  T **mPtr;
 };
 }
 
