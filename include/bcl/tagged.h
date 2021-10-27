@@ -97,6 +97,16 @@ struct add_alias<tagged<Args...>, NewAliasTy...> {
   typedef tagged<Args..., NewAliasTy...> type;
 };
 
+
+/// Make alias for a tag.
+template <class... Args> struct add_alias_list;
+
+/// Make alias for a tag.
+template<class... Args, class... NewAliasTy>
+struct add_alias_list<tagged<Args...>, TypeList<NewAliasTy...>> {
+  typedef tagged<Args..., NewAliasTy...> type;
+};
+
 /// \brief Checks if TagTy is a tag for Tagged::type.
 ///
 /// If TagTy is a tag the member constant `value` equal to true.
@@ -175,6 +185,23 @@ using add_alias_tagged_tag = typename add_alias_tagged<Args...>::tag;
 /// Type alias to access result of bcl::tagged::add_alias.
 template<class... Args>
 using add_alias_tagged_alias = typename add_alias_tagged<Args...>::alias;
+
+/// Type alias to access result of bcl::tagged::add_alias_list.
+template <class... Args>
+using add_alias_list_tagged = typename tags::add_alias_list<Args...>::type;
+
+/// Type alias to access result of bcl::tagged::add_alias_list.
+template <class... Args>
+using add_alias_list_tagged_t = typename add_alias_list_tagged<Args...>::type;
+
+/// Type alias to access result of bcl::tagged::add_alias_list.
+template <class... Args>
+using add_alias_list_tagged_tag = typename add_alias_list_tagged<Args...>::tag;
+
+/// Type alias to access result of bcl::tagged::add_alias_list.
+template <class... Args>
+using add_alias_list_tagged_alias =
+    typename add_alias_list_tagged<Args...>::alias;
 
 /// Type alias to access result of search an appropriate bcl::tagged structure.
 template<class TagTy, class... Taggeds>
