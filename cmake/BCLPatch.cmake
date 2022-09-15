@@ -15,22 +15,27 @@
 
 # Applaies a patch 'patch' to a 'source_dir'
 # Syntax: bcl_patch PATCHFILE patch TARGET source_dir
-#         [REVERSE][IGNORE][PATCH][SUBVERSION]
+#         [REVERSE][IGNORE][PATCH][SUBVERSION][GIT]
 #         [SUBVERSION_OPTIONS option ...]
 #         [PATCH_OPTIONS option ...]
+#         [GIT_OPTIONS option ...]
 # If IGNORE is specified all errors will be treated as warrnings.
-# SUBVERSION_OPTION and PATCH_OPTION can be used to specify options for
-# `svn patch` and `patch` commands. Note, the `patch` command is the main
-# command by default. The main command is executed at first and the
+# SUBVERSION_OPTIONS, PATCH_OPTIONS and GIT_OPTIONS can be used
+# to specify options for `svn patch` and `patch` commands.
+# Note, the `patch` command is the main command by default.
+# The main command is executed at first and the
 # second command is executed only if execution of a main command fails.
 # If PATCH is specified then only `patch` is executed. If SUBVERSION is
-# specified then svn patch is executed.
-# Pre: patch command or subversion package (at least 1.7) must be available.
+# specified then svn patch is executed. If GIT is specified then git apply
+# is executed.
+# Pre: patch command or subversion package (at least 1.7) or git package
+# must be available.
 # Post: if `patch` and `source_dir` exists than the specified patch will be
 # applied.
 function(bcl_patch)
-  cmake_parse_arguments(SP "REVERSE;IGNORE;PATCH;SUBVERSION"
-    "PATCHFILE;TARGET" "SUBVERSION_OPTIONS;PATCH_OPTIONS" ${ARGN})
+  cmake_parse_arguments(SP "REVERSE;IGNORE;PATCH;SUBVERSION;GIT"
+    "PATCHFILE;TARGET"
+    "SUBVERSION_OPTIONS;PATCH_OPTIONS;GIT_OPTIONS" ${ARGN})
   if(NOT EXISTS ${SP_PATCHFILE} OR NOT EXISTS ${SP_TARGET})
     return()
   endif()
@@ -47,29 +52,44 @@ function(bcl_patch)
     set(SEND_ERROR "SEND_ERROR")
   endif()
   message(STATUS ${status})
-  if (NOT SP_PATCH AND SP_SUBVERSION)
+  if (NOT SP_PATCH AND (SP_SUBVERSION OR SP_GIT))
     set(patch_not_exist true)
   else()
     execute_process(COMMAND patch -v OUTPUT_FILE /dev/null
       RESULT_VARIABLE patch_not_exist)
   endif()
   if (patch_not_exist)
-    if (SP_PATCH AND NOT SP_SUBVERSION)
+    find_package(Git)
+    find_package(Subversion "1.7") #svn patch appears in 1.7 version
+    if (SP_PATCH AND NOT SP_SUBVERSION AND NOT SP_GIT)
       message(${SEND_ERROR} "Patch command is not found (search for 'patch')")
       message(${FATAL_ERROR} "${status} - error")
+    elseif (SP_GIT AND NOT GIT_FOUND AND NOT SP_SUBVERSION)
+      message(${SEND_ERROR} "Patch command is not found (search for 'patch' or 'git apply')")
+      message(${FATAL_ERROR} "${status} - error")
     endif()
-    find_package(Subversion "1.7") #svn patch appears in 1.7 version
-    if(NOT Subversion_FOUND)
-      message(${SEND_ERROR} "Patch command is not found (search for 'patch' or 'svn patch')")
-      message(${FATAL_ERROR "${status} - error")
+    if (GIT_FOUND AND (SP_GIT OR NOT SP_SUBVERSION))
+      if(SP_REVERSE)
+        set(options "-R" ${SP_GIT_OPTIONS})
+      else()
+        set(options ${SP_GIT_OPTIONS})
+      endif()
+      execute_process(COMMAND ${GIT_EXECUTABLE} apply ${SP_PATCHFILE} ${options}
+        WORKING_DIRECTORY ${SP_TARGET}
+        RESULT_VARIABLE error)
+    else ()
+      if(NOT Subversion_FOUND)
+        message(${SEND_ERROR} "Patch command is not found (search for 'patch' or 'svn patch' or 'git apply')")
+        message(${FATAL_ERROR} "${status} - error")
+      endif()
+      if(SP_REVERSE)
+        set(options "--reverse-diff" ${SP_SUBVERSION_OPTIONS})
+      else()
+        set(options ${SP_SUBVERSION_OPTIONS})
+      endif()
+      execute_process(COMMAND ${Subversion_SVN_EXECUTABLE} patch
+        ${options} ${SP_PATCHFILE} ${SP_TARGET} RESULT_VARIABLE error)
     endif()
-    if(SP_REVERSE)
-      set(options "--reverse-diff" ${SP_SUBVERSION_OPTIONS})
-    else()
-      set(options ${SP_SUBVERSION_OPTIONS})
-    endif()
-    execute_process(COMMAND ${Subversion_SVN_EXECUTABLE} patch
-      ${options} ${SP_PATCHFILE} ${SP_TARGET} RESULT_VARIABLE error)
   else()
     if(SP_REVERSE)
       set(REVERSE "-R")
