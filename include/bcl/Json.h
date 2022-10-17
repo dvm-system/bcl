@@ -230,9 +230,11 @@
 #include <cctype>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <stack>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <vector>
 
@@ -240,7 +242,7 @@
 #define JSON_ERROR_2 "unexpected character '%c' expected '%c'"
 #define JSON_ERROR_3 "unknown json string, identifier '%s' is not found"
 #define JSON_ERROR_4 "unexpected character '%c' identifier expected"
-#define JSON_ERROR_5 "unexpected character '%c' identifier or number expected"
+#define JSON_ERROR_5 "unexpected character '%c' identifier, number or keyword expected"
 #define JSON_ERROR_6 "value conversion error"
 #define JSON_ERROR_7 "uninitialized elements in array"
 #define JSON_ERROR_8 "target object type does not support duplicate of keys"
@@ -361,8 +363,27 @@ enum class Token : char {
   MINUS = '-',
   NUMBER = 'n',
   IDENTIFIER = 'i',
+  KEYWORD = 'k',
   INVALID = '\0',
 };
+
+/// List of keywords which may occur in a JSON string.
+enum class Keyword : uint8_t {
+  TRUE = 0,
+  FALSE,
+  NO_VALUE,
+};
+
+/// List of keywords which may occur in a JSON string.
+const char *const KeywordTable[] = {"true", "false", "null"};
+
+inline std::string_view toString(Keyword K) noexcept {
+  assert(0 <= static_cast<std::underlying_type_t<Keyword>>(K) &&
+         static_cast<std::underlying_type_t<Keyword>>(K) <
+             sizeof KeywordTable / sizeof KeywordTable[0] &&
+         "Unknown keyword!");
+  return KeywordTable[static_cast<std::underlying_type_t<Keyword>>(K)];
+}
 
 /// Representation of a JSON string.
 typedef std::string String;
@@ -473,6 +494,23 @@ public:
       mNext = mNext < mJSON.size() ? mNext : mJSON.size();
       mEnd = mNext - 1;
       return true;
+    } else if (std::isalpha(mJSON[mNext])) {
+      if (auto K{[this](std::string_view S) {
+            for (std::size_t I = 0,
+                             EI = sizeof KeywordTable / sizeof KeywordTable[0];
+                 I < EI; ++I) {
+              std::string_view Current{KeywordTable[I]};
+              if (S.substr(0, Current.size()) == Current) {
+                mNext = mStart + Current.size();
+                mEnd = mNext - 1;
+                mToken = Token::KEYWORD;
+                mKeyword = static_cast<Keyword>(I);
+                return true;
+              }
+            }
+            return false;
+          }(mJSON.data() + mNext)})
+        return true;
     }
     mEnd = mNext;
     mToken = static_cast<Token>(mJSON[mStart]);
@@ -502,12 +540,16 @@ public:
     return false;
   }
 
-  /// \brief Checks that current token is an identifier or a number
+  /// \brief Checks that current token is an identifier, a number or a keywrod
+  /// ('true', 'false', 'null').
+  ///
   ///
   /// \return If a current token is not an identifier and a number this method
   /// returns false and add appropriate error in the errors collection.
   bool checkValue() {
-    if (is(Token::IDENTIFIER) || is(Token::NUMBER))
+    if (is(Token::IDENTIFIER) || is(Token::NUMBER) ||
+        isKeyword(Keyword::TRUE) || isKeyword(Keyword::FALSE) ||
+        isKeyword(Keyword::NO_VALUE))
       return true;
     mErrors.insert(JSON_ERROR(5), mStart, mJSON[mStart]);
     return false;
@@ -588,6 +630,11 @@ public:
     return mToken == Token::NUMBER && !mIsIntegral;
   }
 
+  /// Return true if a current token is a specified keyword.
+  bool isKeyword(Keyword K) const noexcept {
+    return is(Token::KEYWORD) && mKeyword == K;
+  }
+
   /// Returns container of errors.
   bcl::Diagnostic & errors() noexcept { return mErrors; }
 
@@ -619,6 +666,7 @@ private:
   Position mNext = 0;
   Token mToken;
   bool mIsIntegral = false;
+  Keyword mKeyword = Keyword::NO_VALUE;
   std::stack<State> mStates;
 };
 
@@ -1206,17 +1254,23 @@ template<> struct Traits<double> {
 template<> struct Traits<bool> {
   inline static bool parse(bool &Dest, Lexer &Lex) noexcept {
     try {
+      if (Lex.isKeyword(Keyword::TRUE)) {
+        return Dest = true;
+      } else if (Lex.isKeyword(Keyword::FALSE)) {
+        return !(Dest = false);
+      }
       std::string Str;
       Traits<std::string>::parse(Str, Lex);
-      Dest = Str == "true";
-      return (Str == "true" || Str == "false");
+      Dest = Str == toString(Keyword::TRUE);
+      return (Str == toString(Keyword::TRUE) ||
+              Str == toString(Keyword::FALSE));
     }
     catch (...) {
       return false;
     }
   }
   inline static void unparse(String &JSON, bool Obj) {
-    JSON += Obj ? "true" : "false";;
+    JSON += Obj ? toString(Keyword::TRUE) : toString(Keyword::FALSE);
   }
 };
 
@@ -1778,6 +1832,40 @@ template<> struct Traits<bcl::Diagnostic> {
       Traits<bcl::Diagnostic::value_type>::unparse(JSON, *I);
     }
     JSON += ']';
+  }
+};
+
+/// Specialization of JSON serialization traits for std::optional type.
+///
+/// Note that 'T' must be default constructible and copy assignable.
+template<class T> struct Traits<std::optional<T>> {
+  static_assert(std::is_default_constructible<T>::value,
+    "Underlining type must be default constructible!");
+  static_assert(std::is_copy_assignable<T>::value,
+    "Underlining type must be copy assignable!");
+  static bool parse(std::optional<T> &Dest, ::json::Lexer &Lex) noexcept {
+    try {
+      std::string Str;
+      if (Lex.isKeyword(Keyword::NO_VALUE) ||
+          Traits<std::string>::parse(Str, Lex) &&
+              Str == toString(Keyword::NO_VALUE)) {
+        Dest.reset();
+      } else {
+        T Tmp;
+        Traits<T>::parse(Tmp, Lex);
+        Dest = std::move(Tmp);
+      }
+    }
+    catch (...) {
+      return false;
+    }
+    return true;
+  }
+  static void unparse(String &JSON, const std::optional<T> &Obj) {
+    if (Obj.has_value())
+      Traits<T>::unparse(JSON, *Obj);
+    else
+      JSON += toString(Keyword::NO_VALUE);
   }
 };
 }
